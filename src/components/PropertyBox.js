@@ -63,26 +63,6 @@ export default function PropertyBox({ layer, onChange }) {
           />
         </label>
       </div>
-      <div>
-        <label>
-          시작 Width:
-          <input
-            type="number"
-            value={layer.width ?? ""}
-            onChange={(e) => handleChange("width", Number(e.target.value))}
-          />
-        </label>
-      </div>
-      <div>
-        <label>
-          시작 Height:
-          <input
-            type="number"
-            value={layer.height ?? ""}
-            onChange={(e) => handleChange("height", Number(e.target.value))}
-          />
-        </label>
-      </div>
       {/* 타입별 속성 분기 */}
       {layer.type === "text" && (
         <>
@@ -106,21 +86,22 @@ export default function PropertyBox({ layer, onChange }) {
               />
             </label>
           </div>
-          {/* 필요시 폰트, 크기 등 추가 */}
-        </>
-      )}
-      {(layer.type === "image" || layer.type === "text") && (
-        <>
           <div>
             <label>
-              이미지 URL:
+              폰트:
               <input
                 type="text"
-                value={layer.src}
-                onChange={(e) => handleChange("src", e.target.value)}
+                value={layer.font || ""}
+                onChange={(e) => handleChange("font", e.target.value)}
+                placeholder="예: 30px Arial"
               />
             </label>
           </div>
+        </>
+      )}
+      {/* 타입별 속성 분기 */}
+      {layer.type === "image" && (
+        <>
           <div>
             <label>
               시작 Scale:
@@ -133,6 +114,16 @@ export default function PropertyBox({ layer, onChange }) {
             </label>
           </div>
           {/* 이미지 변경 버튼과 파일 업로드 input */}
+          <div>
+            <label>
+              이미지 URL:
+              <input
+                type="text"
+                value={layer.src}
+                onChange={(e) => handleChange("src", e.target.value)}
+              />
+            </label>
+          </div>
           <button
             type="button"
             onClick={() => {
@@ -157,6 +148,10 @@ export default function PropertyBox({ layer, onChange }) {
               }
             }}
           />
+        </>
+      )}
+      {(layer.type === "image" || layer.type === "text") && (
+        <>
           <div>
             <label>애니메이션 키프레임:</label>
             {Array.isArray(layer.animation) && layer.animation.length > 0 ? (

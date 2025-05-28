@@ -15,8 +15,8 @@ function getImage(src) {
 function CanvasPreview({
   layers,
   currentTime,
-  width = 640,
-  height = 360,
+  width = 1280,
+  height = Math.round((width * 9) / 16),
   selectedLayerIndex,
   onSelectLayer,
 }) {
@@ -27,7 +27,16 @@ function CanvasPreview({
   const layerRects = useRef([]);
 
   useEffect(() => {
-    const ctx = canvasRef.current.getContext("2d");
+    const canvas = canvasRef.current;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, width, height);
     layerRects.current = [];
 

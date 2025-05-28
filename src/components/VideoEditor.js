@@ -261,7 +261,8 @@ function VideoEditor() {
 
   const selectedLayer =
     selectedLayerIndex !== null ? layers[selectedLayerIndex] : null;
-
+  const canvasWidth = 1280;
+  const canvasHeight = Math.round((canvasWidth * 9) / 16);
   return (
     <div className="video-editor">
       <EffectsPanel onSelectEffect={handleSelectEffect} />
@@ -272,8 +273,8 @@ function VideoEditor() {
           <CanvasPreview
             layers={layers}
             currentTime={playhead}
-            width={640}
-            height={360}
+            width={canvasWidth}
+            height={canvasHeight}
             selectedLayerIndex={selectedLayerIndex}
             onSelectLayer={setSelectedLayerIndex}
             onMoveLayer={(idx, x, y) => {
