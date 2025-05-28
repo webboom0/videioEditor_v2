@@ -88,13 +88,31 @@ export default function PropertyBox({ layer, onChange }) {
           </div>
           <div>
             <label>
-              폰트:
+              폰트 크기:
               <input
-                type="text"
-                value={layer.font || ""}
-                onChange={(e) => handleChange("font", e.target.value)}
-                placeholder="예: 30px Arial"
-              />
+                type="number"
+                min={8}
+                max={200}
+                value={layer.fontSize || 30}
+                onChange={(e) =>
+                  handleChange("fontSize", Number(e.target.value))
+                }
+                style={{ width: 60 }}
+              />{" "}
+              px
+            </label>
+          </div>
+          <div>
+            <label>
+              글꼴:
+              <select
+                value={layer.fontFamily || "Arial"}
+                onChange={(e) => handleChange("fontFamily", e.target.value)}
+              >
+                <option value="Arial">Arial</option>
+                <option value="Verdana">Verdana</option>
+                <option value="궁서">궁서</option>
+              </select>
             </label>
           </div>
         </>

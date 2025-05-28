@@ -1,0 +1,140 @@
+[
+  {
+    "type": "text",
+    "text": "Hello!",
+    "x": 200,
+    "y": 100,
+    "start": 0,
+    "duration": 100,
+    "color": "#fff",
+    "font": "30px Arial",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1 },
+      { "time": 5, "x": 200, "y": 100, "scale": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_01.jpg",
+    "x": 0,
+    "y": 0,
+    "start": 0,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_02.jpg",
+    "x": 0,
+    "y": 0,
+    "start": 10,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_03.jpg",
+    "x": 0,
+    "y": 0,
+    "start": 20,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1 },
+      { "time": 2, "x": 20, "y": 0, "scale": 1.2 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_04.jpg",
+    "x": 0,
+    "y": 0,
+    "start": 30,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_05.jpg",
+    "x": 0,
+    "y": 0,
+    "start": 40,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_06.jpg",
+    "x": 0,
+    "y": 0,
+    "start": 50,
+    "duration": 10,
+    "scale": 1,
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+    ]
+  },
+
+  {
+    "type": "effect",
+    "effectType": "flash",
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "start": 2,
+    "duration": 3,
+    "color": "#fff",
+    "intensity": 0.7
+  },
+  {
+    "type": "effect",
+    "effectType": "hearts",
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "start": 10,
+    "duration": 4,
+    "count": 15
+  },
+  {
+    "type": "audio",
+    "src": "/files/music/DRAMA.mp3",
+    "start": 0,
+    "duration": 180,
+    "name": "DRAMA.mp3"
+  }
+]

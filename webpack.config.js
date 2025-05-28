@@ -26,11 +26,17 @@ module.exports = {
     static: {
       directory: path.join(__dirname, "public"),
     },
-    port: 3002,
+    port: 3003,
     hot: true,
     historyApiFallback: true,
   },
   resolve: {
     extensions: [".js", ".jsx"],
   },
+  ignoreWarnings: [
+    {
+      message:
+        /Critical dependency: the request of a dependency is an expression/,
+    },
+  ],
 };

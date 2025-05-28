@@ -5,177 +5,37 @@ import EffectsPanel from "./EffectsPanel";
 import PreviewWindow from "./PreviewWindow";
 import CanvasPreview from "./CanvasPreview";
 import PropertyBox from "./PropertyBox";
+import layersData from "../data/layers.json"; // 또는 fetch로 불러와도 됨
 
 const TIMELINE_DURATION = 180; // 3분(초)
 
 function VideoEditor() {
   const [mediaFiles, setMediaFiles] = useState([]);
-  const [layers, setLayers] = useState([
-    {
-      type: "text",
-      text: "Hello!",
-      x: 200,
-      y: 100,
-      start: 0,
-      duration: 100,
-      color: "#fff",
-      font: "30px Arial",
-      animation: [
-        { time: 0, x: 0, y: 0, scale: 1 }, // 시작 (원본 크기)
-        { time: 5, x: 200, y: 100, scale: 1 }, // 5초 시점 (1.5배)
-      ],
-    },
-    {
-      type: "image",
-      src: "/files/photo/photo_01.jpg",
-      x: 0, // 시작 위치 (px)
-      y: 0,
-      start: 0,
-      duration: 10, // 클립 전체 지속시간
-      scale: 1, // 시작 scale (1 = 원본 크기)
-      scaleMode: "fit",
-      animation: [
-        { time: 0, x: 0, y: 0, scale: 1 }, // 시작 (원본 크기)
-        { time: 2, x: 0, y: 0, scale: 1.2 }, // 2초 시점 (1.2배)
-        { time: 5, x: 0, y: 0, scale: 1.5 }, // 5초 시점 (1.5배)
-        { time: 10, x: 0, y: 0, scale: 1 }, // 끝 (원본 크기)
-      ],
-    },
-    {
-      type: "image",
-      src: "/files/photo/photo_02.jpg",
-      x: 0, // 시작 위치 (px)
-      y: 0,
-      start: 10,
-      duration: 10, // 클립 전체 지속시간
-      scale: 1, // 시작 scale (1 = 원본 크기)
-      scaleMode: "fit",
-      animation: [
-        { time: 0, x: 0, y: 0, scale: 1 }, // 시작 (원본 크기)
-        { time: 2, x: 0, y: 0, scale: 1.2 }, // 2초 시점 (1.2배)
-        { time: 5, x: 0, y: 0, scale: 1.5 }, // 5초 시점 (1.5배)
-        { time: 10, x: 0, y: 0, scale: 1 }, // 끝 (원본 크기)
-      ],
-    },
-    {
-      type: "image",
-      src: "/files/photo/photo_03.jpg",
-      x: 0, // 시작 위치 (px)
-      y: 0,
-      start: 20,
-      duration: 10, // 클립 전체 지속시간
-      scale: 1, // 시작 scale (1 = 원본 크기)
-      scaleMode: "fit",
-      animation: [
-        { time: 0, x: 0, y: 0, scale: 1 }, // 시작 (원본 크기)
-        { time: 2, x: 20, y: 0, scale: 1.2 }, // 2초 시점 (1.2배)
-        { time: 5, x: 0, y: 0, scale: 1.5 }, // 5초 시점 (1.5배)
-        { time: 10, x: 0, y: 0, scale: 1 }, // 끝 (원본 크기)
-      ],
-    },
-    {
-      type: "image",
-      src: "/files/photo/photo_04.jpg",
-      x: 0, // 시작 위치 (px)
-      y: 0,
-      start: 30,
-      duration: 10, // 클립 전체 지속시간
-      scale: 1, // 시작 scale (1 = 원본 크기)
-      scaleMode: "fit",
-      animation: [
-        { time: 0, x: 0, y: 0, scale: 1 }, // 시작 (원본 크기)
-        { time: 2, x: 0, y: 0, scale: 1.2 }, // 2초 시점 (1.2배)
-        { time: 5, x: 0, y: 0, scale: 1.5 }, // 5초 시점 (1.5배)
-        { time: 10, x: 0, y: 0, scale: 1 }, // 끝 (원본 크기)
-      ],
-    },
-    {
-      type: "image",
-      src: "/files/photo/photo_05.jpg",
-      x: 0, // 시작 위치 (px)
-      y: 0,
-      start: 40,
-      duration: 10, // 클립 전체 지속시간
-      scale: 1, // 시작 scale (1 = 원본 크기)
-      scaleMode: "fit",
-      animation: [
-        { time: 0, x: 0, y: 0, scale: 1 }, // 시작 (원본 크기)
-        { time: 2, x: 0, y: 0, scale: 1.2 }, // 2초 시점 (1.2배)
-        { time: 5, x: 0, y: 0, scale: 1.5 }, // 5초 시점 (1.5배)
-        { time: 10, x: 0, y: 0, scale: 1 }, // 끝 (원본 크기)
-      ],
-    },
-    {
-      type: "image",
-      src: "/files/photo/photo_06.jpg",
-      x: 0, // 시작 위치 (px)
-      y: 0,
-      start: 50,
-      duration: 10, // 클립 전체 지속시간
-      scale: 1, // 시작 scale (1 = 원본 크기)
-      scaleMode: "fit",
-      animation: [
-        { time: 0, x: 0, y: 0, scale: 1 }, // 시작 (원본 크기)
-        { time: 2, x: 0, y: 0, scale: 1.2 }, // 2초 시점 (1.2배)
-        { time: 5, x: 0, y: 0, scale: 1.5 }, // 5초 시점 (1.5배)
-        { time: 10, x: 0, y: 0, scale: 1 }, // 끝 (원본 크기)
-      ],
-    },
-    // {
-    //   type: "video",
-    //   src: "/files/video/theme1.mp4",
-    //   x: 0,
-    //   y: 0,
-    //   start: 2,
-    //   duration: 100,
-    //   animation: {
-    //     type: "move-scale",
-    //     endX: 400,
-    //     endY: 200,
-    //     endWidth: 320, // 원하는 최종 width
-    //     endHeight: 180, // 원하는 최종 height
-    //   },
-    //   width: 160, // 시작 width
-    //   height: 90,
-    // },
-    {
-      type: "effect",
-      effectType: "flash", // 또는 "line", "circle", "blur", "grayscale" 등
-      x: 0,
-      y: 0,
-      width: 640,
-      height: 360,
-      start: 2,
-      duration: 3,
-      // 추가 파라미터
-      color: "#fff",
-      intensity: 0.7,
-    },
-    {
-      type: "effect",
-      effectType: "hearts",
-      x: 0,
-      y: 0,
-      width: 640,
-      height: 360,
-      start: 10,
-      duration: 4,
-      count: 15, // 하트 개수
-    },
-    {
-      type: "audio",
-      src: "/files/music/DRAMA.mp3",
-      start: 0,
-      duration: 180, // 오디오 길이에 맞게 설정
-      name: "DRAMA.mp3",
-    },
-    // ...이펙트 등
-  ]);
+  const [layers, setLayers] = useState([]);
   const [playhead, setPlayhead] = useState(0);
   const [selectedLayerIndex, setSelectedLayerIndex] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const animationRef = useRef();
   const audioRef = useRef(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // 최초 마운트 시 localStorage에서 불러오거나, 없으면 json에서 불러오기
+  useEffect(() => {
+    const saved = localStorage.getItem("layers");
+    if (saved) {
+      setLayers(JSON.parse(saved));
+    } else {
+      setLayers(layersData);
+      localStorage.setItem("layers", JSON.stringify(layersData));
+    }
+  }, []);
+
+  // layers가 바뀔 때마다 localStorage에 저장
+  useEffect(() => {
+    if (layers.length > 0) {
+      localStorage.setItem("layers", JSON.stringify(layers));
+    }
+  }, [layers]);
 
   // 애니메이션 프레임
   useEffect(() => {
@@ -259,6 +119,42 @@ function VideoEditor() {
     );
   };
 
+  // Export 함수 추가
+  const handleExport = () => {
+    const canvas = document.querySelector("canvas"); // 또는 canvasRef.current 사용
+    if (!canvas) {
+      alert("캔버스를 찾을 수 없습니다.");
+      return;
+    }
+    setIsExporting(true); // 녹화 시작 시 표시
+    const stream = canvas.captureStream(30); // 30fps
+    const recorder = new window.MediaRecorder(stream, {
+      mimeType: "video/webm",
+    });
+    const chunks = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "video/webm" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "export.webm";
+      a.click();
+      URL.revokeObjectURL(url);
+      setIsExporting(false); // 녹화 끝나면 숨김
+    };
+
+    recorder.start();
+
+    // 예시: 10초간 녹화 후 자동 정지 (원하는 길이로 수정)
+    setTimeout(() => {
+      recorder.stop();
+    }, 10000);
+  };
+
   const selectedLayer =
     selectedLayerIndex !== null ? layers[selectedLayerIndex] : null;
   const canvasWidth = 1280;
@@ -317,6 +213,9 @@ function VideoEditor() {
             >
               🗑️ 선택된 클립 삭제
             </button>
+            <button onClick={handleExport} disabled={isExporting}>
+              {isExporting ? "녹화 중..." : "Export"}
+            </button>
           </div>
           <Timeline
             mediaFiles={layers}
@@ -349,6 +248,67 @@ function VideoEditor() {
       </div>
       {/* 오디오 태그 (숨김) */}
       <audio ref={audioRef} src="/files/music/DRAMA.mp3" preload="auto" />
+      {/* 녹화 중이면 안내 메시지 또는 로딩바 표시 */}
+      {isExporting && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              padding: 40,
+              borderRadius: 12,
+              fontSize: 24,
+              fontWeight: "bold",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+            }}
+          >
+            🎬 영상 녹화 중입니다...
+            <br />
+            잠시만 기다려주세요!
+            <div
+              style={{
+                marginTop: 20,
+                width: 200,
+                height: 10,
+                background: "#eee",
+                borderRadius: 5,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background:
+                    "linear-gradient(90deg, #4f8cff 40%, #a0c8ff 100%)",
+                  animation: "progressBar 10s linear",
+                }}
+              />
+            </div>
+          </div>
+          {/* 진행바 애니메이션용 스타일 */}
+          <style>
+            {`
+              @keyframes progressBar {
+                from { width: 0%; }
+                to { width: 100%; }
+              }
+            `}
+          </style>
+        </div>
+      )}
     </div>
   );
 }

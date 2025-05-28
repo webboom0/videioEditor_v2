@@ -146,19 +146,15 @@ function CanvasPreview({
           ctx.drawImage(video, x, y, drawW, drawH);
         };
       } else if (layer.type === "text") {
-        ctx.save();
-        ctx.font = `${layer.fontSize ? layer.fontSize * scale : 32 * scale}px ${
-          layer.fontFamily || "sans-serif"
-        }`;
+        const fontSize = layer.fontSize || 30;
+        const fontFamily = layer.fontFamily || "Arial";
+        ctx.font = `${fontSize}px ${fontFamily}`;
         ctx.fillStyle = layer.color || "#fff";
-        ctx.textBaseline = "top";
-        ctx.fillText(layer.text || "", x, y);
-        ctx.restore();
+        ctx.fillText(layer.text, layer.x, layer.y);
       } else if (layer.type === "effect") {
-        // 이펙트도 x, y, scale 적용
         const effectFunc = EFFECT_MAP[layer.effectType];
         if (effectFunc) {
-          effectFunc(ctx, { ...layer, x, y, scale }, currentTime);
+          effectFunc(ctx, layer, currentTime, canvas);
         }
       }
     });
