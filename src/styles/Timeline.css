@@ -1,0 +1,78 @@
+.timeline {
+  width: 100%;
+  background: #fff;
+  padding: 10px;
+  box-sizing: border-box;
+  position: relative;
+  border-top: 1px solid #dcdcdc;
+  overflow-y: auto;
+}
+.timeline-header {
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE/Edge */
+}
+.timeline-ticks {
+  display: flex;
+  justify-content: space-between;
+  color: #aaa;
+  font-size: 12px;
+}
+.timeline-tracks {
+  height: 200px;
+  background: #fff;
+  cursor: pointer;
+  overflow-y: auto;
+}
+.timeline-track {
+  position: relative;
+  height: 30px;
+  margin-bottom: 4px;
+}
+.video-track {
+  background: #fafafa;
+}
+.audio-track {
+  background: #fafafa;
+}
+.timeline-clip {
+  position: absolute;
+  top: 2px;
+  height: 26px;
+  background: #4caf50;
+  color: #fff;
+  border-radius: 4px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.timeline-clip.clip-audio {
+  background: #fafafa;
+  border: 1px solid #dcdcdc;
+}
+.timeline-clip.clip-audio canvas {
+  width: 100% !important;
+  height: 100%;
+}
+.timeline-clip button {
+  margin-left: 8px;
+  background: #f44336;
+  border: none;
+  color: #fff;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.timeline-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ffeb3b;
+  z-index: 10;
+}
+.timeline-clip.selected {
+  outline: 2px solid #ffd600;
+  z-index: 2;
+}
