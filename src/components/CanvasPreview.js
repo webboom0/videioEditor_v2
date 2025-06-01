@@ -113,18 +113,18 @@ function CanvasPreview({
       });
 
       // 선택된 레이어면 테두리
-      if (selectedLayerIndex === idx) {
-        ctx.save();
-        ctx.strokeStyle = "#FFD600";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(
-          x - 2,
-          y - 2,
-          layer.width || 160 + 4,
-          layer.height || 90 + 4
-        );
-        ctx.restore();
-      }
+      // if (selectedLayerIndex === idx) {
+      //   ctx.save();
+      //   ctx.strokeStyle = "#FFD600";
+      //   ctx.lineWidth = 3;
+      //   ctx.strokeRect(
+      //     x - 2,
+      //     y - 2,
+      //     layer.width || 160 + 4,
+      //     layer.height || 90 + 4
+      //   );
+      //   ctx.restore();
+      // }
 
       // === 타입별 렌더링 ===
       if (layer.type === "image") {
@@ -282,18 +282,18 @@ function CanvasPreview({
         index: idx,
       });
 
-      if (selectedLayerIndex === idx) {
-        ctx.save();
-        ctx.strokeStyle = "#FFD600";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(
-          x - 2,
-          y - 2,
-          layer.width || 160 + 4,
-          layer.height || 90 + 4
-        );
-        ctx.restore();
-      }
+      // if (selectedLayerIndex === idx) {
+      //   ctx.save();
+      //   ctx.strokeStyle = "#FFD600";
+      //   ctx.lineWidth = 3;
+      //   ctx.strokeRect(
+      //     x - 2,
+      //     y - 2,
+      //     layer.width || 160 + 4,
+      //     layer.height || 90 + 4
+      //   );
+      //   ctx.restore();
+      // }
 
       ctx.save();
       ctx.globalAlpha = animOpacity;
