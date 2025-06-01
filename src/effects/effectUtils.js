@@ -72,5 +72,70 @@ export const EFFECT_MAP = {
   flash: effectFlash,
   line: effectLine,
   hearts: effectHearts,
-  // ...다른 효과 추가...
+  lovelyHearts: (ctx, layer, currentTime, canvas) => {
+    // 더 다양한 색상과 크기의 하트가 랜덤하게 떠오르는 효과
+    const t = (currentTime - layer.start) / layer.duration;
+    for (let i = 0; i < (layer.count || 20); i++) {
+      const x = Math.random() * canvas.width;
+      const y = canvas.height - t * (canvas.height + 100) + Math.random() * 30;
+      const size = 20 + Math.random() * 20;
+      ctx.save();
+      ctx.globalAlpha = 0.7 + 0.3 * Math.sin(i + t * 10);
+      ctx.fillStyle = ["#ffb6c1", "#ff69b4", "#ff1493", "#ff69b4", "#fff0f5"][
+        i % 5
+      ];
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.bezierCurveTo(
+        x - size / 2,
+        y - size / 2,
+        x - size,
+        y + size / 3,
+        x,
+        y + size
+      );
+      ctx.bezierCurveTo(
+        x + size,
+        y + size / 3,
+        x + size / 2,
+        y - size / 2,
+        x,
+        y
+      );
+      ctx.fill();
+      ctx.restore();
+    }
+  },
+  loveRain: (ctx, layer, currentTime, canvas) => {
+    // 핑크빛 하트가 비처럼 내리는 효과
+    const t = (currentTime - layer.start) / layer.duration;
+    for (let i = 0; i < (layer.count || 30); i++) {
+      const x = (i * 53 + t * 200) % canvas.width;
+      const y = (t * canvas.height * 1.2 + i * 37) % canvas.height;
+      const size = 16 + (i % 3) * 8;
+      ctx.save();
+      ctx.globalAlpha = 0.5 + 0.5 * Math.sin(i + t * 5);
+      ctx.fillStyle = ["#ffb6c1", "#ff69b4", "#ff1493", "#fff0f5"][i % 4];
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.bezierCurveTo(
+        x - size / 2,
+        y - size / 2,
+        x - size,
+        y + size / 3,
+        x,
+        y + size
+      );
+      ctx.bezierCurveTo(
+        x + size,
+        y + size / 3,
+        x + size / 2,
+        y - size / 2,
+        x,
+        y
+      );
+      ctx.fill();
+      ctx.restore();
+    }
+  },
 };

@@ -277,3 +277,62 @@ button:hover {
   padding: 10px;
   background-color: #fff;
 }
+.template-list-modal h4 {
+  display: none;
+}
+.template-list-modal ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.template-list-modal ul > li {
+  flex-basis: calc(50% - 5px);
+}
+.template-list-modal button {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background-color: #fff;
+  border: solid 1px #dcdcdc;
+  color: #000;
+  padding: 0;
+  margin: 0;
+}
+.template-list-modal img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.template-list-modal {
+  padding: 40px 10px;
+}
+.template-list-modal .close-btn {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border-radius: 5px;
+  width: 30px;
+  height: 30px;
+  background-color: #000;
+  color: #fff;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  padding: 0;
+}
+.template-list-modal .close-btn::after {
+  content: "X";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+}
+.blind {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+}

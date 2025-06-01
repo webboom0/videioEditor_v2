@@ -1,0 +1,86 @@
+[
+  {
+    "type": "text",
+    "text": "A Lover's Concerto",
+    "x": 200,
+    "y": 100,
+    "start": 0,
+    "duration": 100,
+    "color": "#fff",
+    "fontSize": 100,
+    "fontFamily": "Arial",
+    "animation": [
+      { "time": 0, "x": 400, "y": 400, "scale": 0.7 },
+      { "time": 5, "x": 400, "y": 400, "scale": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_03.jpg",
+    "x": 0,
+    "y": 0,
+    "start": 0,
+    "duration": 30,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_05.jpg",
+    "x": 0,
+    "y": 0,
+    "start": 30,
+    "duration": 40,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+    ]
+  },
+  {
+    "type": "effect",
+    "effectType": "hearts",
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "start": 10,
+    "duration": 4,
+    "count": 15
+  },
+  {
+    "type": "effect",
+    "effectType": "lovelyHearts",
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "start": 16,
+    "duration": 8,
+    "count": 20
+  },
+  {
+    "type": "effect",
+    "effectType": "loveRain",
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "start": 25,
+    "duration": 6,
+    "count": 30
+  },
+  {
+    "type": "audio",
+    "src": "/files/music/LOVE.mp3",
+    "start": 0,
+    "duration": 180,
+    "name": "LOVE.mp3"
+  }
+]

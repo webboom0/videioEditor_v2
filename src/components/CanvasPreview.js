@@ -172,28 +172,38 @@ function CanvasPreview({
       let y = layer.y ?? 0;
       let scale = layer.scale ?? 1;
 
-      // 키프레임 애니메이션 처리
+      // 키프레임 애니메이션 처리 (수정)
       if (Array.isArray(layer.animation) && layer.animation.length > 1) {
         const relTime = currentTime - layer.start;
-        // 현재 시간에 해당하는 두 키프레임 찾기
-        let prev = layer.animation[0];
-        let next = layer.animation[layer.animation.length - 1];
-        for (let i = 1; i < layer.animation.length; i++) {
-          if (layer.animation[i].time > relTime) {
-            next = layer.animation[i];
-            prev = layer.animation[i - 1];
-            break;
+        const anim = layer.animation;
+        if (relTime <= anim[0].time) {
+          // 애니메이션 시작 전: 첫 키프레임 값
+          x = anim[0].x ?? x;
+          y = anim[0].y ?? y;
+          scale = anim[0].scale ?? scale;
+        } else if (relTime >= anim[anim.length - 1].time) {
+          // 애니메이션 끝난 후: 마지막 키프레임 값
+          x = anim[anim.length - 1].x ?? x;
+          y = anim[anim.length - 1].y ?? y;
+          scale = anim[anim.length - 1].scale ?? scale;
+        } else {
+          // 중간: 보간
+          let prev = anim[0];
+          let next = anim[anim.length - 1];
+          for (let i = 1; i < anim.length; i++) {
+            if (anim[i].time > relTime) {
+              next = anim[i];
+              prev = anim[i - 1];
+              break;
+            }
           }
+          const t = (relTime - prev.time) / (next.time - prev.time);
+          x = (prev.x ?? x) + ((next.x ?? prev.x ?? x) - (prev.x ?? x)) * t;
+          y = (prev.y ?? y) + ((next.y ?? prev.y ?? y) - (prev.y ?? y)) * t;
+          scale =
+            (prev.scale ?? scale) +
+            ((next.scale ?? prev.scale ?? scale) - (prev.scale ?? scale)) * t;
         }
-        // 보간 비율
-        const t = (relTime - prev.time) / (next.time - prev.time);
-
-        // x, y, scale 보간 (없으면 이전 값 유지)
-        x = (prev.x ?? x) + ((next.x ?? prev.x ?? x) - (prev.x ?? x)) * t;
-        y = (prev.y ?? y) + ((next.y ?? prev.y ?? y) - (prev.y ?? y)) * t;
-        scale =
-          (prev.scale ?? scale) +
-          ((next.scale ?? prev.scale ?? scale) - (prev.scale ?? scale)) * t;
       }
 
       layerRects.current.push({

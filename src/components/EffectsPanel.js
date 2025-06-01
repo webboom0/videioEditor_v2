@@ -1,18 +1,21 @@
 import React from "react";
 
-function EffectsPanel({ onSelectEffect }) {
-  const effects = [
-    { name: "Template", icon: "fa fa-edit" },
-    { name: "Media", icon: "fa fa-edit" },
-    { name: "Text", icon: "fa fa-edit" },
-    { name: "Image", icon: "fa fa-edit" },
-    { name: "Effect", icon: "fa fa-edit" },
-  ];
+function EffectsPanel({ onSelectEffect, onTemplateButtonClick }) {
+  const effects = [{ name: "Template", icon: "fa fa-cubes" }];
 
   return (
     <div className="effects-panel">
-      {effects.map((effect, index) => (
-        <button key={index.name} onClick={() => onSelectEffect(effect)}>
+      {effects.map((effect) => (
+        <button
+          key={effect.name}
+          onClick={() => {
+            if (effect.name === "Template") {
+              onTemplateButtonClick();
+            } else {
+              onSelectEffect(effect);
+            }
+          }}
+        >
           <i className={effect.icon}></i>
           <span>{effect.name}</span>
         </button>
