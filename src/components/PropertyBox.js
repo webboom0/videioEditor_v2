@@ -243,6 +243,25 @@ export default function PropertyBox({ layer, onChange }) {
                         style={{ width: 50 }}
                       />
                     </span>
+                    <span>
+                      opacity:
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        max={1}
+                        value={kf.opacity ?? 1}
+                        onChange={(e) => {
+                          const newAnim = [...layer.animation];
+                          newAnim[idx] = {
+                            ...newAnim[idx],
+                            opacity: Number(e.target.value),
+                          };
+                          handleChange("animation", newAnim);
+                        }}
+                        style={{ width: 50 }}
+                      />
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
@@ -287,6 +306,32 @@ export default function PropertyBox({ layer, onChange }) {
                 </button>
               </div>
             )}
+          </div>
+          <div>
+            <label>
+              가로 정렬:
+              <select
+                value={layer.align || "left"}
+                onChange={(e) => handleChange("align", e.target.value)}
+              >
+                <option value="left">왼쪽</option>
+                <option value="center">가운데</option>
+                <option value="right">오른쪽</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <label>
+              세로 정렬:
+              <select
+                value={layer.verticalAlign || "top"}
+                onChange={(e) => handleChange("verticalAlign", e.target.value)}
+              >
+                <option value="top">위</option>
+                <option value="middle">중앙</option>
+                <option value="bottom">아래</option>
+              </select>
+            </label>
           </div>
         </>
       )}

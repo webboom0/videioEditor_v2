@@ -6,12 +6,14 @@
     "y": 100,
     "start": 0,
     "duration": 100,
+    "align": "center",
+    "verticalAlign": "middle",
     "color": "#fff",
     "fontSize": 100,
     "fontFamily": "Arial",
     "animation": [
-      { "time": 0, "x": 400, "y": 400, "scale": 0.7 },
-      { "time": 5, "x": 400, "y": 400, "scale": 1 }
+      { "time": 0, "x": 400, "y": 400, "scale": 0.7, "opacity": 1 },
+      { "time": 5, "x": 400, "y": 400, "scale": 1, "opacity": 1 }
     ]
   },
   {
@@ -19,15 +21,17 @@
     "src": "/files/photo/photo_03.jpg",
     "x": 0,
     "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
     "start": 0,
     "duration": 30,
     "scale": 1,
     "scaleMode": "fit",
     "animation": [
-      { "time": 0, "x": 0, "y": 0, "scale": 1 },
-      { "time": 2, "x": 0, "y": 0, "scale": 1.2 },
-      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
-      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2, "opacity": 1 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5, "opacity": 1 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
     ]
   },
   {
@@ -35,22 +39,27 @@
     "src": "/files/photo/photo_05.jpg",
     "x": 0,
     "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
     "start": 30,
     "duration": 40,
     "scale": 1,
     "scaleMode": "fit",
     "animation": [
-      { "time": 0, "x": 0, "y": 0, "scale": 1 },
-      { "time": 2, "x": 0, "y": 0, "scale": 1.2 },
-      { "time": 5, "x": 0, "y": 0, "scale": 1.5 },
-      { "time": 10, "x": 0, "y": 0, "scale": 1 }
+      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2, "opacity": 1 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5, "opacity": 1 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
     ]
   },
+
   {
     "type": "effect",
     "effectType": "hearts",
     "x": 0,
     "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
     "scale": 1,
     "start": 10,
     "duration": 4,
@@ -61,6 +70,8 @@
     "effectType": "lovelyHearts",
     "x": 0,
     "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
     "scale": 1,
     "start": 16,
     "duration": 8,
@@ -71,10 +82,24 @@
     "effectType": "loveRain",
     "x": 0,
     "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
     "scale": 1,
     "start": 25,
     "duration": 6,
     "count": 30
+  },
+  {
+    "type": "effect",
+    "effectType": "filmDust",
+    "x": 0,
+    "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
+    "start": 0,
+    "duration": 30,
+    "count": 100,
+    "opacity": 0.8
   },
   {
     "type": "audio",

@@ -1,13 +1,21 @@
 import React from "react";
 
-function EffectsPanel({ onSelectEffect, onTemplateButtonClick }) {
-  const effects = [{ name: "Template", icon: "fa fa-cubes" }];
-
+export default function EffectsPanel({
+  effects,
+  onSelectEffect,
+  onTemplateButtonClick,
+  selectedEffect,
+}) {
   return (
     <div className="effects-panel">
       {effects.map((effect) => (
         <button
           key={effect.name}
+          className={
+            selectedEffect && selectedEffect.name === effect.name
+              ? "active"
+              : ""
+          }
           onClick={() => {
             if (effect.name === "Template") {
               onTemplateButtonClick();
@@ -23,5 +31,3 @@ function EffectsPanel({ onSelectEffect, onTemplateButtonClick }) {
     </div>
   );
 }
-
-export default EffectsPanel;

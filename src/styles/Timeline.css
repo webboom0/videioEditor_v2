@@ -28,6 +28,10 @@
   position: relative;
   height: 30px;
   margin-bottom: 4px;
+  border-bottom: 1px dashed #fafafa;
+}
+.timeline-track:hover {
+  background-color: #fafafa;
 }
 .video-track {
   background: #fafafa;
@@ -46,6 +50,7 @@
   display: flex;
   align-items: center;
   cursor: pointer;
+  font-size: 12px;
 }
 .timeline-clip.clip-audio {
   background: #fafafa;
@@ -75,4 +80,26 @@
 .timeline-clip.selected {
   outline: 2px solid #ffd600;
   z-index: 2;
+}
+
+.timeline-clip.clip-image {
+  background-color: #007bff;
+}
+.timeline-clip.clip-video {
+  background-color: #d400ff;
+}
+.timeline-clip.clip-audio {
+  background-color: #ffffff;
+}
+.timeline-clip.clip-text {
+  background-color: #671e7e;
+}
+.timeline-clip.clip-effect {
+  background-color: #f17006;
+}
+.timeline-clip.clip-effect.active {
+  background-color: #f1e206;
+}
+.timeline-clip.clip-effect.active {
+  background-color: #f1e206;
 }

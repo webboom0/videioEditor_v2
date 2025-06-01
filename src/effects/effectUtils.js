@@ -138,4 +138,84 @@ export const EFFECT_MAP = {
       ctx.restore();
     }
   },
+  filmDust: (ctx, layer, currentTime, canvas) => {
+    // 랜덤한 먼지 파티클
+    const count = layer.count || 80;
+    ctx.save();
+    ctx.globalAlpha = layer.opacity ?? 0.25;
+    for (let i = 0; i < count; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const r = Math.random() * 2 + 0.5;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 랜덤 스크래치
+    ctx.save();
+    ctx.globalAlpha = layer.opacity ?? 0.12;
+    for (let i = 0; i < 10; i++) {
+      const x = Math.random() * canvas.width;
+      const y1 = Math.random() * canvas.height;
+      const y2 = y1 + Math.random() * 40 + 10;
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = Math.random() * 1.5 + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x, y1);
+      ctx.lineTo(x, y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  },
+  filmGrain: (ctx, layer, currentTime, canvas) => {
+    const grainAmount = layer.amount ?? 0.15; // 0~1
+    const w = canvas.width,
+      h = canvas.height;
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = (Math.random() - 0.5) * 255 * grainAmount;
+      data[i] = Math.min(255, Math.max(0, data[i] + noise)); // R
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise)); // G
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise)); // B
+      // A는 그대로
+    }
+    ctx.putImageData(imageData, 0, 0);
+  },
+  filmScratch: (ctx, layer, currentTime, canvas) => {
+    ctx.save();
+    ctx.globalAlpha = layer.opacity ?? 0.12;
+    for (let i = 0; i < (layer.count || 8); i++) {
+      const x = Math.random() * canvas.width;
+      const y1 = Math.random() * canvas.height;
+      const y2 = y1 + Math.random() * 60 + 20;
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = Math.random() * 1.5 + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x, y1);
+      ctx.lineTo(x, y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  },
+  filmBurn: (ctx, layer, currentTime, canvas) => {
+    ctx.save();
+    ctx.globalAlpha = layer.opacity ?? 0.18;
+    const grad = ctx.createRadialGradient(
+      canvas.width * 0.1,
+      canvas.height * 0.5,
+      10,
+      canvas.width * 0.1,
+      canvas.height * 0.5,
+      canvas.width * 0.5
+    );
+    grad.addColorStop(0, "rgba(255,200,100,0.8)");
+    grad.addColorStop(1, "rgba(255,200,100,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  },
 };

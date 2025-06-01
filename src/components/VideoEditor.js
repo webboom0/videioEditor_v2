@@ -16,6 +16,13 @@ import PropertyBox from "./PropertyBox";
 
 const TIMELINE_DURATION = 180; // 3분(초)
 
+const effects = [
+  { name: "Template", icon: "fa fa-cubes" },
+  // { name: "Blur", icon: "fa fa-adjust" },
+  // { name: "Fade", icon: "fa fa-adjust" },
+  // 등등 필요한 이펙트 추가
+];
+
 function VideoEditor() {
   const [mediaFiles, setMediaFiles] = useState([]);
 
@@ -38,6 +45,8 @@ function VideoEditor() {
   const [showTemplates, setShowTemplates] = useState(false);
 
   const [templateFiles, setTemplateFiles] = useState([]);
+
+  const [selectedEffect, setSelectedEffect] = useState(null);
 
   // 최초 마운트 시 localStorage에서 불러오거나, 없으면 json에서 불러오기
 
@@ -136,7 +145,12 @@ function VideoEditor() {
   }, [playhead]);
 
   const handleSelectEffect = (effect) => {
-    console.log("선택된 효과:", effect);
+    // 이미 선택된 이펙트를 다시 클릭하면 해제
+    if (selectedEffect && selectedEffect.name === effect.name) {
+      setSelectedEffect(null);
+    } else {
+      setSelectedEffect(effect);
+    }
   };
 
   const handleRemove = (index) => {
@@ -260,23 +274,28 @@ function VideoEditor() {
   // 템플릿 버튼 클릭 시
 
   const handleTemplateButtonClick = () => {
-    setTemplateFiles(["DRAMA", "LOVE"]);
-
     setShowTemplates(true);
+    setTemplateFiles(["DRAMA", "LOVE"]);
+  };
+
+  // 템플릿 선택 시
+
+  const handleTemplateSelect = (templateName) => {
+    // ... 템플릿 적용 코드 ...
+    setSelectedEffect(null);
   };
 
   // 템플릿 파일 클릭 시
 
   const handleTemplateFileClick = (file) => {
     handleSelectTemplateFile(file);
-
-    setShowTemplates(false);
   };
 
   // 닫기 버튼
 
   const handleTemplateModalClose = () => {
     setShowTemplates(false);
+    setSelectedEffect(null);
   };
 
   const selectedLayer =
@@ -289,8 +308,10 @@ function VideoEditor() {
   return (
     <div className="video-editor">
       <EffectsPanel
+        effects={effects}
         onSelectEffect={handleSelectEffect}
         onTemplateButtonClick={handleTemplateButtonClick}
+        selectedEffect={selectedEffect}
       />
 
       <div className="editor-container">
@@ -348,7 +369,14 @@ function VideoEditor() {
 
         <div className="editor-timeline-container">
           <div className="animation-controls">
-            <button onClick={() => setIsPlaying((p) => !p)}>
+            <button
+              onClick={() => {
+                if (!isPlaying && showTemplates) {
+                  setShowTemplates(false); // 재생 시작 시 템플릿 모달 닫기
+                }
+                setIsPlaying((p) => !p);
+              }}
+            >
               {isPlaying ? (
                 <i className="fa fa-pause"></i>
               ) : (
