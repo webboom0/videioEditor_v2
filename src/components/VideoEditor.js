@@ -48,6 +48,25 @@ function VideoEditor() {
 
   const [selectedEffect, setSelectedEffect] = useState(null);
 
+  const mediaLibraryRef = useRef(null);
+
+  useEffect(() => {
+    if (!showTemplates) return;
+
+    function handleClickOutside(e) {
+      if (
+        mediaLibraryRef.current &&
+        !mediaLibraryRef.current.contains(e.target)
+      ) {
+        setShowTemplates(false);
+        setSelectedEffect(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showTemplates]);
+
   // 최초 마운트 시 localStorage에서 불러오거나, 없으면 json에서 불러오기
 
   useEffect(() => {
@@ -316,7 +335,10 @@ function VideoEditor() {
 
       <div className="editor-container">
         <div className="editor-media-container">
-          <div className={`media-library${showTemplates ? " active" : ""}`}>
+          <div
+            className={`media-library${showTemplates ? " active" : ""}`}
+            ref={mediaLibraryRef}
+          >
             <MediaLibrary onUpload={setMediaFiles} />
 
             {showTemplates && (
