@@ -89,6 +89,22 @@ function VideoEditor() {
 
   useEffect(() => {
     if (isPlaying) {
+      const startTime = Date.now() - playhead * 1000; // 밀리초 단위로 변환
+
+      const tick = () => {
+        const currentTime = Date.now();
+        const elapsedSeconds = (currentTime - startTime) / 1000;
+
+        if (elapsedSeconds >= TIMELINE_DURATION) {
+          setIsPlaying(false);
+          setPlayhead(TIMELINE_DURATION);
+          return;
+        }
+
+        setPlayhead(elapsedSeconds);
+        animationRef.current = requestAnimationFrame(tick);
+      };
+
       animationRef.current = requestAnimationFrame(tick);
     } else {
       cancelAnimationFrame(animationRef.current);
@@ -96,22 +112,6 @@ function VideoEditor() {
 
     return () => cancelAnimationFrame(animationRef.current);
   }, [isPlaying, playhead]);
-
-  const tick = () => {
-    setPlayhead((prev) => {
-      const next = prev + 0.033;
-
-      if (next > TIMELINE_DURATION) {
-        setIsPlaying(false);
-
-        return TIMELINE_DURATION;
-      }
-
-      return next;
-    });
-
-    animationRef.current = requestAnimationFrame(tick);
-  };
 
   // 오디오 동기화
 
@@ -163,12 +163,45 @@ function VideoEditor() {
     }
   }, [playhead]);
 
-  const handleSelectEffect = (effect) => {
+  const handleSelectEffect = async (effect) => {
     // 이미 선택된 이펙트를 다시 클릭하면 해제
     if (selectedEffect && selectedEffect.name === effect.name) {
       setSelectedEffect(null);
     } else {
       setSelectedEffect(effect);
+
+      // 프레임 시퀀스 이펙트 선택 시 자동으로 타임라인에 추가
+      if (effect.name === "Frame Sequence") {
+        // 프레임 시퀀스 이펙트 인스턴스 생성
+        const { frameSequenceEffect } = await import(
+          "../effects/frameSequenceEffect.js"
+        );
+
+        // 프레임 개수 확인
+        await frameSequenceEffect.preloadFrames();
+        const frameCount = frameSequenceEffect.maxFrameCount;
+        const duration = frameCount / 30; // 30fps 기준
+
+        const frameSequenceLayer = {
+          type: "effect",
+          effectType: "frameSequence",
+          name: "프레임 시퀀스",
+          start: playhead,
+          duration: duration,
+          maxFrameCount: frameCount,
+          x: 0,
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          align: "center",
+          verticalAlign: "middle",
+          scaleMode: "fit",
+          animation: [{ time: 0, x: 0, y: 0, scale: 1, opacity: 1 }],
+        };
+
+        setLayers((prev) => [...prev, frameSequenceLayer]);
+        setSelectedLayerIndex(layers.length); // 새로 추가된 레이어 선택
+      }
     }
   };
 
@@ -294,7 +327,7 @@ function VideoEditor() {
 
   const handleTemplateButtonClick = () => {
     setShowTemplates(true);
-    setTemplateFiles(["DRAMA", "LOVE"]);
+    setTemplateFiles(["DRAMA", "LOVE", "WEDDING_01"]);
   };
 
   // 템플릿 선택 시

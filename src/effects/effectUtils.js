@@ -13,6 +13,9 @@ export function drawHeart(ctx, x, y, size, color = "#ff69b4") {
   ctx.restore();
 }
 
+// 프레임 시퀀스 이펙트 import
+import { renderFrameSequence } from "./frameSequenceEffect.js";
+
 // 번쩍임 효과
 export function effectFlash(ctx, layer, currentTime, canvas) {
   const scale = layer.scale ?? 1;
@@ -72,6 +75,7 @@ export const EFFECT_MAP = {
   flash: effectFlash,
   line: effectLine,
   hearts: effectHearts,
+  frameSequence: renderFrameSequence,
   lovelyHearts: (ctx, layer, currentTime, canvas) => {
     // 더 다양한 색상과 크기의 하트가 랜덤하게 떠오르는 효과
     const t = (currentTime - layer.start) / layer.duration;

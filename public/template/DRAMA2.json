@@ -1,0 +1,194 @@
+[
+  {
+    "type": "text",
+    "text": "Hello!",
+    "x": 200,
+    "y": 100,
+    "align": "center",
+    "verticalAlign": "middle",
+    "start": 0,
+    "duration": 100,
+    "color": "#fff",
+    "fontSize": 100,
+    "fontFamily": "Arial",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_01.jpg",
+    "x": 0,
+    "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
+    "start": 0,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2, "opacity": 1 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5, "opacity": 1 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_02.jpg",
+    "x": 0,
+    "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
+    "start": 10,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2, "opacity": 1 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5, "opacity": 1 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_03.jpg",
+    "x": 0,
+    "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
+    "start": 20,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 2, "x": 20, "y": 0, "scale": 1.2, "opacity": 1 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5, "opacity": 1 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_04.jpg",
+    "x": 0,
+    "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
+    "start": 30,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2, "opacity": 1 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5, "opacity": 1 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_05.jpg",
+    "x": 0,
+    "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
+    "start": 40,
+    "duration": 10,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2, "opacity": 1 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1.5, "opacity": 1 },
+      { "time": 10, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_06.jpg",
+    "x": 0,
+    "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
+    "start": 50,
+    "duration": 30,
+    "scale": 1,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 2, "x": 0, "y": 0, "scale": 1.2, "opacity": 1 },
+      { "time": 5, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/bg_filim.png",
+    "x": 0,
+    "y": 54,
+    "align": "center",
+    "verticalAlign": "top",
+    "start": 0,
+    "duration": 30,
+    "scale": 1.2,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 25, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 30, "x": 0, "y": 0, "scale": 1, "opacity": 0 }
+    ]
+  },
+  {
+    "type": "effect",
+    "effectType": "flash",
+    "x": 0,
+    "y": 0,
+    "width": 640,
+    "height": 360,
+    "start": 2,
+    "duration": 3,
+    "color": "#fff",
+    "intensity": 0.7
+  },
+  {
+    "type": "effect",
+    "effectType": "hearts",
+    "x": 0,
+    "y": 0,
+    "width": 640,
+    "height": 360,
+    "start": 10,
+    "duration": 4,
+    "count": 15
+  },
+  {
+    "type": "effect",
+    "effectType": "filmGrain",
+    "start": 0,
+    "duration": 45,
+    "amount": 0.18
+  },
+  {
+    "type": "effect",
+    "effectType": "filmScratch",
+    "start": 45,
+    "duration": 30,
+    "count": 10,
+    "opacity": 0.5
+  },
+  {
+    "type": "effect",
+    "effectType": "filmBurn",
+    "start": 30,
+    "duration": 30,
+    "opacity": 0.3
+  },
+  {
+    "type": "audio",
+    "src": "/files/music/DRAMA.mp3",
+    "start": 0,
+    "duration": 180,
+    "name": "DRAMA.mp3"
+  }
+]

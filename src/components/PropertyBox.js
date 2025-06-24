@@ -3,7 +3,7 @@ import React from "react";
 
 export default function PropertyBox({ layer, onChange }) {
   if (!layer) return null;
-
+  const maxFrame = 515;
   // 공통 속성
   const handleChange = (key, value) => {
     onChange({ ...layer, [key]: value });
@@ -340,7 +340,102 @@ export default function PropertyBox({ layer, onChange }) {
           <div>
             <label>이펙트 타입: {layer.effectType}</label>
           </div>
-          {/* effectType별로 추가 속성 분기 가능 */}
+
+          {/* 프레임 시퀀스 전용 속성 */}
+          {layer.effectType === "frameSequence" && (
+            <>
+              <div>
+                <label>
+                  FPS:
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={layer.fps || 30}
+                    onChange={(e) =>
+                      handleChange("fps", Number(e.target.value))
+                    }
+                    style={{ width: 60 }}
+                  />
+                </label>
+              </div>
+              <div>
+                <label>
+                  시작 프레임:
+                  <input
+                    type="number"
+                    min={1}
+                    max={maxFrame}
+                    value={layer.startFrame || 1}
+                    onChange={(e) =>
+                      handleChange("startFrame", Number(e.target.value))
+                    }
+                    style={{ width: 60 }}
+                  />
+                </label>
+              </div>
+              <div>
+                <label>
+                  끝 프레임:
+                  <input
+                    type="number"
+                    min={1}
+                    max={maxFrame}
+                    value={layer.endFrame || maxFrame}
+                    onChange={(e) =>
+                      handleChange("endFrame", Number(e.target.value))
+                    }
+                    style={{ width: 60 }}
+                  />
+                </label>
+              </div>
+              <div>
+                <label>
+                  반복:
+                  <select
+                    value={layer.loop || "once"}
+                    onChange={(e) => handleChange("loop", e.target.value)}
+                  >
+                    <option value="once">한 번</option>
+                    <option value="loop">반복</option>
+                    <option value="pingpong">왕복</option>
+                  </select>
+                </label>
+              </div>
+              <div>
+                <label>
+                  스케일 모드:
+                  <select
+                    value={layer.scaleMode || "fit"}
+                    onChange={(e) => handleChange("scaleMode", e.target.value)}
+                  >
+                    <option value="fit">맞춤</option>
+                    <option value="cover">덮기</option>
+                    <option value="none">원본</option>
+                  </select>
+                </label>
+              </div>
+            </>
+          )}
+
+          {/* 다른 이펙트 타입별 속성 */}
+          {layer.effectType === "hearts" && (
+            <div>
+              <label>
+                하트 개수:
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={layer.count || 12}
+                  onChange={(e) =>
+                    handleChange("count", Number(e.target.value))
+                  }
+                  style={{ width: 60 }}
+                />
+              </label>
+            </div>
+          )}
         </>
       )}
       {/* 필요시 더 많은 타입별 속성 추가 */}

@@ -91,6 +91,7 @@ function CanvasPreview({
               break;
             }
           }
+          // 키프레임 간의 실제 시간 차이로 보간
           const t = (relTime - prev.time) / (next.time - prev.time);
           animOffsetX = (prev.x ?? 0) + ((next.x ?? 0) - (prev.x ?? 0)) * t;
           animOffsetY = (prev.y ?? 0) + ((next.y ?? 0) - (prev.y ?? 0)) * t;
@@ -149,28 +150,8 @@ function CanvasPreview({
           else if (anchorY === 0 && layer.verticalAlign === "bottom")
             anchorY = height;
 
-          // 2. 애니메이션 상대값
-          let animOffsetX = 0,
-            animOffsetY = 0,
-            animScale = 1;
-          if (Array.isArray(layer.animation) && layer.animation.length > 1) {
-            // 보간 코드 (기존과 동일)
-            const relTime = currentTime - layer.start;
-            let prev = layer.animation[0];
-            let next = layer.animation[layer.animation.length - 1];
-            for (let i = 1; i < layer.animation.length; i++) {
-              if (layer.animation[i].time > relTime) {
-                next = layer.animation[i];
-                prev = layer.animation[i - 1];
-                break;
-              }
-            }
-            const t = (relTime - prev.time) / (next.time - prev.time);
-            animOffsetX = (prev.x ?? 0) + ((next.x ?? 0) - (prev.x ?? 0)) * t;
-            animOffsetY = (prev.y ?? 0) + ((next.y ?? 0) - (prev.y ?? 0)) * t;
-            animScale =
-              (prev.scale ?? 1) + ((next.scale ?? 1) - (prev.scale ?? 1)) * t;
-          }
+          // 2. 애니메이션 값은 위에서 계산된 값 사용
+          // animOffsetX, animOffsetY, animScale, animOpacity는 이미 계산됨
 
           // 3. 최종 위치
           const finalX = anchorX + animOffsetX;
@@ -194,20 +175,55 @@ function CanvasPreview({
           ctx.restore();
         }
       } else if (layer.type === "video") {
-        // 비디오는 미리 생성된 video 엘리먼트 사용
         let video = videoRefs.current[layer.src];
         if (!video) {
           video = document.createElement("video");
           video.src = layer.src;
           video.crossOrigin = "anonymous";
+          video.muted = true;
+          video.playsInline = true;
           videoRefs.current[layer.src] = video;
         }
         video.currentTime = Math.max(0, currentTime - layer.start);
-        video.oncanplay = () => {
-          const drawW = video.videoWidth * scale;
-          const drawH = video.videoHeight * scale;
-          ctx.drawImage(video, x, y, drawW, drawH);
-        };
+
+        // 비디오 메타데이터가 준비되지 않았으면 그리지 않음
+        const videoW = video.videoWidth;
+        const videoH = video.videoHeight;
+        if (!videoW || !videoH) return;
+
+        let renderScale = layer.scale ?? 1;
+
+        // scaleMode: fit/cover
+        if (layer.scaleMode === "fit") {
+          renderScale = Math.min(width / videoW, height / videoH);
+        } else if (layer.scaleMode === "cover") {
+          renderScale = Math.max(width / videoW, height / videoH);
+        }
+
+        // 정렬
+        let anchorX = layer.x ?? 0;
+        let anchorY = layer.y ?? 0;
+        if (anchorX === 0 && layer.align === "center") anchorX = width / 2;
+        else if (anchorX === 0 && layer.align === "right") anchorX = width;
+        if (anchorY === 0 && layer.verticalAlign === "middle")
+          anchorY = height / 2;
+        else if (anchorY === 0 && layer.verticalAlign === "bottom")
+          anchorY = height;
+
+        // 실제 그릴 위치 계산 (중앙 정렬 등)
+        let drawX = 0,
+          drawY = 0;
+        if (layer.align === "center") drawX = -videoW / 2;
+        else if (layer.align === "right") drawX = -videoW;
+        if (layer.verticalAlign === "middle") drawY = -videoH / 2;
+        else if (layer.verticalAlign === "bottom") drawY = -videoH;
+
+        ctx.save();
+        ctx.globalAlpha = layer.opacity ?? 1;
+        ctx.translate(anchorX, anchorY);
+        ctx.scale(renderScale, renderScale);
+        ctx.drawImage(video, drawX, drawY, videoW, videoH);
+        ctx.restore();
       } else if (layer.type === "text") {
         const fontSize = layer.fontSize || 30;
         const fontFamily = layer.fontFamily || "Arial";

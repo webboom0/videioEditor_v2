@@ -1,0 +1,50 @@
+[
+  {
+    "type": "image",
+    "src": "/files/photo/photo_02.jpg",
+    "x": 0,
+    "y": 0,
+    "align": "left",
+    "verticalAlign": "bottom",
+    "start": 7,
+    "duration": 5,
+    "scale": 0.2,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": -100, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 0.5, "x": 50, "y": 0, "scale": 1, "opacity": 1 }
+    ]
+  },
+  {
+    "type": "image",
+    "src": "/files/photo/photo_01.jpg",
+    "x": 0,
+    "y": 0,
+    "align": "center",
+    "verticalAlign": "middle",
+    "start": 4.3,
+    "duration": 5,
+    "scale": 0.8,
+    "scaleMode": "fit",
+    "animation": [
+      { "time": 0, "x": -200, "y": 0, "scale": 1, "opacity": 1 },
+      { "time": 1.3, "x": 20, "y": 0, "scale": 1, "opacity": 1 }
+    ]
+  },
+  {
+    "type": "effect",
+    "effectType": "frameSequence",
+    "name": "프레임 시퀀스",
+    "start": 0,
+    "duration": 17,
+    "maxFrameCount": 515,
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "opacity": 1,
+    "align": "center",
+    "verticalAlign": "middle",
+    "scaleMode": "fit",
+    "animation": [{ "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 }]
+  }
+]

@@ -1,22 +1,5 @@
 [
   {
-    "type": "text",
-    "text": "Hello!",
-    "x": 200,
-    "y": 100,
-    "align": "center",
-    "verticalAlign": "middle",
-    "start": 0,
-    "duration": 100,
-    "color": "#fff",
-    "fontSize": 100,
-    "fontFamily": "Arial",
-    "animation": [
-      { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
-      { "time": 5, "x": 0, "y": 0, "scale": 1, "opacity": 1 }
-    ]
-  },
-  {
     "type": "image",
     "src": "/files/photo/photo_01.jpg",
     "x": 0,
@@ -183,12 +166,5 @@
     "start": 30,
     "duration": 30,
     "opacity": 0.3
-  },
-  {
-    "type": "audio",
-    "src": "/files/music/DRAMA.mp3",
-    "start": 0,
-    "duration": 180,
-    "name": "DRAMA.mp3"
   }
 ]
