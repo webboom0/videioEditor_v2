@@ -19,14 +19,24 @@
   {
     "type": "image",
     "src": "/files/photo/photo_03.jpg",
-    "x": 0,
-    "y": 0,
+    "x": 640,
+    "y": 360,
     "align": "center",
     "verticalAlign": "middle",
     "start": 0,
     "duration": 30,
     "scale": 1,
-    "scaleMode": "fit",
+    "scaleMode": "crop",
+    "cropMode": "center",
+    "targetSize": {
+      "width": 1920,
+      "height": 1080
+    },
+    "cropOffset": {
+      "x": 0,
+      "y": 0
+    },
+    "cropZoom": 1.2,
     "animation": [
       { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
       { "time": 2, "x": 0, "y": 0, "scale": 1.2, "opacity": 1 },
@@ -37,14 +47,24 @@
   {
     "type": "image",
     "src": "/files/photo/photo_07.jpg",
-    "x": 0,
-    "y": 0,
+    "x": 640,
+    "y": 360,
     "align": "center",
     "verticalAlign": "middle",
     "start": 30,
     "duration": 40,
     "scale": 1,
-    "scaleMode": "fit",
+    "scaleMode": "crop",
+    "cropMode": "smart",
+    "targetSize": {
+      "width": 1920,
+      "height": 1080
+    },
+    "cropOffset": {
+      "x": 0.1,
+      "y": -0.2
+    },
+    "cropZoom": 1.3,
     "animation": [
       { "time": 0, "x": 0, "y": 0, "scale": 1, "opacity": 1 },
       { "time": 2, "x": 0, "y": 0, "scale": 1.2, "opacity": 1 },

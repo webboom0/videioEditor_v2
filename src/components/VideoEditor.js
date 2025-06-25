@@ -12,6 +12,9 @@ import CanvasPreview from "./CanvasPreview";
 
 import PropertyBox from "./PropertyBox";
 
+import CanvasToolbar from "./CanvasToolbar";
+import CanvasMiniMap from "./CanvasMiniMap";
+
 // import layersData from "../data/layers.json"; // 또는 fetch로 불러와도 됨
 
 const TIMELINE_DURATION = 180; // 3분(초)
@@ -49,6 +52,13 @@ function VideoEditor() {
   const [selectedEffect, setSelectedEffect] = useState(null);
 
   const mediaLibraryRef = useRef(null);
+  
+  // Canvas 컨테이너 ref 추가
+  const canvasContainerRef = useRef(null);
+
+  // 화질, 줌, 뷰포트 상태 추가
+  const [quality, setQuality] = useState(0.4); // 0.2, 0.4, 0.8
+  const [zoom, setZoom] = useState(1); // 1 = 100%
 
   useEffect(() => {
     if (!showTemplates) return;
@@ -162,6 +172,21 @@ function VideoEditor() {
       audio.currentTime = playhead;
     }
   }, [playhead]);
+
+  // 스페이스바로 재생/일시정지 토글
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // input, textarea, select 등에서는 무시
+      const tag = e.target.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setIsPlaying((p) => !p);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleSelectEffect = async (effect) => {
     // 이미 선택된 이펙트를 다시 클릭하면 해제
@@ -357,6 +382,14 @@ function VideoEditor() {
 
   const canvasHeight = Math.round((canvasWidth * 9) / 16);
 
+  // 미니맵에서 스크롤 연동 함수
+  function handleMiniMapMove(newScroll) {
+    if (!canvasContainerRef.current) return;
+    console.log('handleMiniMapMove', newScroll);
+    canvasContainerRef.current.scrollLeft = newScroll.left;
+    canvasContainerRef.current.scrollTop = newScroll.top;
+  }
+
   return (
     <div className="video-editor">
       <EffectsPanel
@@ -367,7 +400,14 @@ function VideoEditor() {
       />
 
       <div className="editor-container">
-        <div className="editor-media-container">
+        <div className="editor-media-container" ref={canvasContainerRef}>
+          {/* 툴바: 오른쪽 상단 */}
+          <CanvasToolbar
+            quality={quality}
+            onQualityChange={setQuality}
+            zoom={zoom}
+            onZoomChange={setZoom}
+          />
           <div
             className={`media-library${showTemplates ? " active" : ""}`}
             ref={mediaLibraryRef}
@@ -405,6 +445,7 @@ function VideoEditor() {
 
           {/* <PreviewWindow mediaFiles={mediaFiles} /> */}
 
+          {/* 캔버스 프리뷰 */}
           <CanvasPreview
             layers={layers}
             currentTime={playhead}
@@ -419,6 +460,17 @@ function VideoEditor() {
                 )
               );
             }}
+            containerRef={canvasContainerRef}
+            quality={quality}
+            zoom={zoom}
+          />
+          {/* 미니맵: 오른쪽 하단 */}
+          <CanvasMiniMap
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+            zoom={zoom}
+            containerRef={canvasContainerRef}
+            onMove={handleMiniMapMove}
           />
         </div>
 

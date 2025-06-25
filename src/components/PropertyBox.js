@@ -1,5 +1,6 @@
 // src/components/PropertyBox.js
 import React from "react";
+import ImageCropControls from "./ImageCropControls";
 
 export default function PropertyBox({ layer, onChange }) {
   if (!layer) return null;
@@ -165,6 +166,14 @@ export default function PropertyBox({ layer, onChange }) {
                 reader.readAsDataURL(file);
               }
             }}
+          />
+          
+          {/* 이미지 크롭 컨트롤 */}
+          <ImageCropControls 
+            layer={layer} 
+            onUpdateLayer={onChange}
+            canvasWidth={1280}
+            canvasHeight={720}
           />
         </>
       )}
