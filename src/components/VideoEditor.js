@@ -2,8 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 
 import Timeline from "./Timeline";
 
-import MediaLibrary from "./MediaLibrary";
-
 import EffectsPanel from "./EffectsPanel";
 
 import PreviewWindow from "./PreviewWindow";
@@ -27,8 +25,6 @@ const effects = [
 ];
 
 function VideoEditor() {
-  const [mediaFiles, setMediaFiles] = useState([]);
-
   const [layers, setLayers] = useState([]);
 
   const [playhead, setPlayhead] = useState(0);
@@ -234,6 +230,76 @@ function VideoEditor() {
     setLayers((prevLayers) => prevLayers.filter((_, i) => i !== index));
   };
 
+  // 키프레임 추가 핸들러
+  const handleKeyframeAdd = (layerIndex, time) => {
+    setLayers((prevLayers) => {
+      const layer = prevLayers[layerIndex];
+      if (!layer) return prevLayers;
+
+      // 현재 레이어의 상태를 기반으로 새 키프레임 생성
+      const newKeyframe = {
+        time: time,
+        x: layer.x || 0,
+        y: layer.y || 0,
+        scale: layer.scale || 1,
+        opacity: layer.opacity || 1,
+      };
+
+      // 기존 애니메이션 배열이 없으면 생성
+      const animation = layer.animation || [];
+      
+      // 시간 순서대로 정렬하여 삽입
+      const newAnimation = [...animation, newKeyframe].sort((a, b) => a.time - b.time);
+
+      return prevLayers.map((l, i) => 
+        i === layerIndex 
+          ? { ...l, animation: newAnimation }
+          : l
+      );
+    });
+  };
+
+  // 키프레임 삭제 핸들러
+  const handleKeyframeRemove = (layerIndex, time) => {
+    setLayers((prevLayers) => {
+      const layer = prevLayers[layerIndex];
+      if (!layer || !layer.animation) return prevLayers;
+
+      const newAnimation = layer.animation.filter(kf => 
+        Math.abs(kf.time - time) > 0.1
+      );
+
+      return prevLayers.map((l, i) => 
+        i === layerIndex 
+          ? { ...l, animation: newAnimation }
+          : l
+      );
+    });
+  };
+
+  // 키프레임 업데이트 핸들러
+  const handleKeyframeUpdate = (layerIndex, keyframeIndex, updatedKeyframe) => {
+    setLayers((prevLayers) => {
+      const layer = prevLayers[layerIndex];
+      if (!layer || !layer.animation) return prevLayers;
+
+      const newAnimation = [...layer.animation];
+      newAnimation[keyframeIndex] = updatedKeyframe;
+      
+      // 시간 순서대로 정렬
+      newAnimation.sort((a, b) => a.time - b.time);
+
+      return prevLayers.map((l, i) => 
+        i === layerIndex 
+          ? { ...l, animation: newAnimation }
+          : l
+      );
+    });
+
+    // 실시간 미리보기를 위해 강제 리렌더링
+    // CanvasPreview가 자동으로 업데이트됨
+  };
+
   const handlePlayheadChange = (newTime) => {
     setPlayhead(newTime);
   };
@@ -300,6 +366,32 @@ function VideoEditor() {
     setTimeout(() => {
       recorder.stop();
     }, 10000);
+  };
+
+  // 템플릿 내보내기 함수 추가
+  const handleExportTemplate = () => {
+    if (layers.length === 0) {
+      alert("저장할 레이어가 없습니다.");
+      return;
+    }
+
+    // 현재 layers 상태를 템플릿 JSON으로 변환
+    const templateData = layers.map(layer => {
+      // 불필요한 속성 제거 (예: globalIndex 등)
+      const { globalIndex, ...cleanLayer } = layer;
+      return cleanLayer;
+    });
+
+    // JSON 파일로 다운로드
+    const blob = new Blob([JSON.stringify(templateData, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `template_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleApplyTemplate = (template) => {
@@ -390,8 +482,95 @@ function VideoEditor() {
     canvasContainerRef.current.scrollTop = newScroll.top;
   }
 
+  // 드래그 앤 드롭 템플릿 불러오기
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = Array.from(e.dataTransfer.files);
+    const jsonFile = files.find(file => file.name.endsWith('.json'));
+    
+    if (jsonFile) {
+      try {
+        const text = await jsonFile.text();
+        const data = JSON.parse(text);
+        
+        let layersArr = [];
+        if (Array.isArray(data)) {
+          layersArr = data;
+        } else if (Array.isArray(data.layers)) {
+          layersArr = data.layers;
+        } else {
+          layersArr = [data];
+        }
+
+        setLayers(layersArr);
+        
+        // 오디오 트랙 찾기
+        const audioLayer = layersArr.find((layer) => layer.type === "audio");
+        setAudioSrc(audioLayer ? audioLayer.src : "");
+        
+        setSelectedLayerIndex(null);
+        setPlayhead(0);
+        setIsPlaying(false);
+        
+        alert(`템플릿 "${jsonFile.name}"을 성공적으로 불러왔습니다!`);
+      } catch (error) {
+        alert(`템플릿 파일을 불러오는 중 오류가 발생했습니다: ${error.message}`);
+      }
+    } else {
+      alert('JSON 파일을 드래그해주세요.');
+    }
+  };
+
+  // 파일 업로드 핸들러 (MediaLibrary 대체)
+  const handleFileUpload = (files) => {
+    const newLayers = [];
+    
+    files.forEach((file, index) => {
+      const fileType = file.type.startsWith('image/') ? 'image' : 
+                      file.type.startsWith('video/') ? 'video' : 
+                      file.type.startsWith('audio/') ? 'audio' : 'unknown';
+      
+      if (fileType !== 'unknown') {
+        const fileUrl = URL.createObjectURL(file);
+        const newLayer = {
+          type: fileType,
+          src: fileUrl,
+          name: file.name,
+          start: playhead,
+          duration: fileType === 'audio' ? 180 : 10, // 오디오는 3분, 나머지는 10초
+          x: 0,
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          align: 'center',
+          verticalAlign: 'middle',
+          animation: [
+            { time: 0, x: 0, y: 0, scale: 1, opacity: 1 }
+          ]
+        };
+        
+        newLayers.push(newLayer);
+      }
+    });
+    
+    if (newLayers.length > 0) {
+      setLayers(prev => [...prev, ...newLayers]);
+    }
+  };
+
   return (
-    <div className="video-editor">
+    <div 
+      className="video-editor"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <EffectsPanel
         effects={effects}
         onSelectEffect={handleSelectEffect}
@@ -412,7 +591,32 @@ function VideoEditor() {
             className={`media-library${showTemplates ? " active" : ""}`}
             ref={mediaLibraryRef}
           >
-            <MediaLibrary onUpload={setMediaFiles} />
+            {/* 파일 업로드 버튼 */}
+            <div style={{ padding: '10px', borderBottom: '1px solid #ddd' }}>
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*,audio/*"
+                onChange={(e) => handleFileUpload(Array.from(e.target.files))}
+                style={{ display: 'none' }}
+                id="file-upload"
+              />
+              <label 
+                htmlFor="file-upload"
+                style={{
+                  display: 'block',
+                  padding: '8px 12px',
+                  background: '#007bff',
+                  color: 'white',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  fontSize: '12px'
+                }}
+              >
+                파일 업로드
+              </label>
+            </div>
 
             {showTemplates && (
               <div className="template-list-modal">
@@ -524,6 +728,10 @@ function VideoEditor() {
             <button onClick={handleExport} disabled={isExporting}>
               {isExporting ? "녹화 중..." : "Export"}
             </button>
+
+            <button onClick={handleExportTemplate}>
+              템플릿 저장
+            </button>
           </div>
 
           <Timeline
@@ -540,6 +748,9 @@ function VideoEditor() {
                 )
               );
             }}
+            onKeyframeAdd={handleKeyframeAdd}
+            onKeyframeRemove={handleKeyframeRemove}
+            onKeyframeUpdate={handleKeyframeUpdate}
           />
         </div>
       </div>

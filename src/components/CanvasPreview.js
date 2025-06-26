@@ -3,6 +3,20 @@ import { EFFECT_MAP } from "../effects/effectUtils";
 import { drawCroppedImage } from "../utils/imageCropUtils";
 import { getThumbnail } from '../utils/imageCacheUtils';
 
+// Easing 함수들
+function applyEasing(t, easingType) {
+  switch (easingType) {
+    case 'easeIn':
+      return t * t;
+    case 'easeOut':
+      return 1 - (1 - t) * (1 - t);
+    case 'easeInOut':
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    default:
+      return t; // linear
+  }
+}
+
 // 이미지 캐싱 및 로딩 함수
 const imageCache = {};
 function getImage(src) {
@@ -200,13 +214,17 @@ function CanvasPreview({
           }
           // 키프레임 간의 실제 시간 차이로 보간
           const t = (relTime - prev.time) / (next.time - prev.time);
-          animOffsetX = (prev.x ?? 0) + ((next.x ?? 0) - (prev.x ?? 0)) * t;
-          animOffsetY = (prev.y ?? 0) + ((next.y ?? 0) - (prev.y ?? 0)) * t;
+          
+          // Easing 적용
+          const easedT = applyEasing(t, prev.easing || 'linear');
+          
+          animOffsetX = (prev.x ?? 0) + ((next.x ?? 0) - (prev.x ?? 0)) * easedT;
+          animOffsetY = (prev.y ?? 0) + ((next.y ?? 0) - (prev.y ?? 0)) * easedT;
           animScale =
-            (prev.scale ?? 1) + ((next.scale ?? 1) - (prev.scale ?? 1)) * t;
+            (prev.scale ?? 1) + ((next.scale ?? 1) - (prev.scale ?? 1)) * easedT;
           const prevOpacity = prev.opacity ?? layer.opacity ?? 1;
           const nextOpacity = next.opacity ?? layer.opacity ?? 1;
-          animOpacity = prevOpacity + (nextOpacity - prevOpacity) * t;
+          animOpacity = prevOpacity + (nextOpacity - prevOpacity) * easedT;
         }
       } else {
         animOpacity = layer.opacity ?? 1;
@@ -445,12 +463,16 @@ function CanvasPreview({
             }
           }
           const t = (relTime - prev.time) / (next.time - prev.time);
-          x = (prev.x ?? x) + ((next.x ?? x) - (prev.x ?? x)) * t;
-          y = (prev.y ?? y) + ((next.y ?? y) - (prev.y ?? y)) * t;
-          scale = (prev.scale ?? scale) + ((next.scale ?? scale) - (prev.scale ?? scale)) * t;
+          
+          // Easing 적용
+          const easedT = applyEasing(t, prev.easing || 'linear');
+          
+          x = (prev.x ?? x) + ((next.x ?? x) - (prev.x ?? x)) * easedT;
+          y = (prev.y ?? y) + ((next.y ?? y) - (prev.y ?? y)) * easedT;
+          scale = (prev.scale ?? scale) + ((next.scale ?? scale) - (prev.scale ?? scale)) * easedT;
           const prevOpacity = prev.opacity ?? layer.opacity ?? 1;
           const nextOpacity = next.opacity ?? layer.opacity ?? 1;
-          animOpacity = prevOpacity + (nextOpacity - prevOpacity) * t;
+          animOpacity = prevOpacity + (nextOpacity - prevOpacity) * easedT;
         }
       } else {
         animOpacity = layer.opacity ?? 1;
