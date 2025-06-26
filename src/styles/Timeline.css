@@ -1,6 +1,6 @@
 .timeline {
   width: 100%;
-  background: #fff;
+  background: #23272e !important;
   padding: 10px 0;
   box-sizing: border-box;
   position: relative;
@@ -11,12 +11,15 @@
   user-select: none;
   -webkit-user-select: none; /* Safari */
   -ms-user-select: none; /* IE/Edge */
+  background: #23272e !important;
+  color: #b0b0b0;
 }
 .timeline-ticks {
   display: flex;
   justify-content: space-between;
-  color: #aaa;
+  color: #b0b0b0;
   font-size: 12px;
+  background: #23272e !important;
 }
 .timeline-tracks {
   height: 200px;
@@ -29,6 +32,7 @@
   height: 30px;
   margin-bottom: 4px;
   border-bottom: 1px dashed #fafafa;
+  background: transparent;
 }
 .timeline-track:hover {
   background-color: #fafafa;
@@ -53,7 +57,7 @@
   font-size: 12px;
 }
 .timeline-clip.clip-audio {
-  background: #fafafa;
+  background: #1e7a3a; /* 녹색 */
   border: 1px solid #dcdcdc;
 }
 .timeline-clip.clip-audio canvas {
@@ -83,22 +87,22 @@
 }
 
 .timeline-clip.clip-image {
-  background-color: #007bff;
+  background-color: #34517a; /* 짙은 회색기운 파랑 */
 }
 .timeline-clip.clip-video {
-  background-color: #d400ff;
+  background-color: #197a7a; /* 짙은 시안 */
 }
 .timeline-clip.clip-audio {
-  background-color: #ffffff;
+  background-color: #1e7a3a; /* 녹색 */
 }
 .timeline-clip.clip-text {
-  background-color: #671e7e;
+  background-color: #44485a;
 }
 .timeline-clip.clip-effect {
-  background-color: #f17006;
+  background-color: #6a4f1e;
 }
 .timeline-clip.clip-effect.active {
-  background-color: #f1e206;
+  background-color: #bfa206;
 }
 
 /* 키프레임 스타일 */
@@ -126,4 +130,12 @@
 
 .timeline-context-menu button:active {
   background-color: #e0e0e0;
+}
+
+.timeline-tick {
+  color: #888;
+}
+
+.timeline, .timeline-tracks, .timeline-header, .timeline-ticks {
+  background: #23272e !important;
 }

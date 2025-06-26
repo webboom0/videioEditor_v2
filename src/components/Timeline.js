@@ -13,6 +13,7 @@ function Timeline({
   onKeyframeAdd,
   onKeyframeRemove,
   onKeyframeUpdate,
+  onClipResize,
 }) {
   const TIMELINE_DURATION = 180; // 3분(초)
   const TIMELINE_WIDTH = 600; // 타임라인 전체 px (원하는 값으로 조정)
@@ -81,6 +82,56 @@ function Timeline({
     const percent = x / rect.width;
     const newTime = Math.round(percent * TIMELINE_DURATION);
     onPlayheadChange && onPlayheadChange(newTime);
+  };
+
+  // 클립 리사이즈 핸들 드래그
+  const handleResizeStart = (e, clipIndex, direction) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const clip = mediaFiles[clipIndex];
+    const startX = e.clientX;
+    const origStart = clip.start;
+    const origDuration = clip.duration;
+    const timelineRect = e.target.closest('.timeline-tracks').getBoundingClientRect();
+    const timelineWidth = timelineRect.width;
+
+    // 키프레임 제한 계산
+    let minStart = 0;
+    let maxEnd = origStart + origDuration;
+    if (Array.isArray(clip.animation) && clip.animation.length > 0) {
+      const minKF = Math.min(...clip.animation.map(kf => kf.time));
+      const maxKF = Math.max(...clip.animation.map(kf => kf.time));
+      minStart = origStart + minKF;
+      maxEnd = origStart + maxKF;
+    }
+
+    const handleMouseMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaSec = (deltaX / timelineWidth) * TIMELINE_DURATION;
+      let newStart = origStart;
+      let newDuration = origDuration;
+      if (direction === 'left') {
+        newStart = Math.max(0, Math.min(origStart + deltaSec, origStart + origDuration - 0.1));
+        if (Array.isArray(clip.animation) && clip.animation.length > 0) {
+          newStart = Math.min(newStart, minStart);
+        }
+        newDuration = origDuration + (origStart - newStart);
+      } else if (direction === 'right') {
+        let newEnd = origStart + origDuration + deltaSec;
+        if (Array.isArray(clip.animation) && clip.animation.length > 0) {
+          newEnd = Math.max(newEnd, maxEnd);
+        }
+        newEnd = Math.max(newEnd, origStart + 0.1);
+        newDuration = newEnd - origStart;
+      }
+      onClipResize && onClipResize(clipIndex, newStart, newDuration);
+    };
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
   };
 
   // 클립 스타일 계산
@@ -423,6 +474,23 @@ function Timeline({
                 }}
                 onContextMenu={(e) => handleClipContextMenu(e, i)}
               >
+                {/* 왼쪽 리사이즈 핸들 */}
+                <div
+                  className="timeline-resize-handle left"
+                  onMouseDown={(e) => handleResizeStart(e, i, 'left')}
+                  style={{ position: 'absolute', left: 0, top: '50%', transform: 'translate(-50%, -50%)', width: 12, height: 24, cursor: 'ew-resize', zIndex: 10, background: 'transparent' }}
+                >
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '2px solid #007bff', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }} />
+                </div>
+                {/* 오른쪽 리사이즈 핸들 */}
+                <div
+                  className="timeline-resize-handle right"
+                  onMouseDown={(e) => handleResizeStart(e, i, 'right')}
+                  style={{ position: 'absolute', right: 0, top: '50%', transform: 'translate(50%, -50%)', width: 12, height: 24, cursor: 'ew-resize', zIndex: 10, background: 'transparent' }}
+                >
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '2px solid #007bff', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }} />
+                </div>
+                {/* 클립 내용 */}
                 {clip.type === "image" ? (
                   <>{clip.name || "이미지"}</>
                 ) : clip.type === "audio" ? (
@@ -434,7 +502,6 @@ function Timeline({
                 ) : (
                   clip.name || clip.text || clip.type
                 )}
-                
                 {/* 키프레임 표시 */}
                 {renderKeyframes(clip)}
               </div>

@@ -565,6 +565,17 @@ function VideoEditor() {
     }
   };
 
+  // 클립 리사이즈 핸들러
+  const handleClipResize = (clipIndex, newStart, newDuration) => {
+    setLayers((prevLayers) =>
+      prevLayers.map((layer, i) =>
+        i === clipIndex
+          ? { ...layer, start: Math.round(newStart * 100) / 100, duration: Math.round(newDuration * 100) / 100 }
+          : layer
+      )
+    );
+  };
+
   return (
     <div 
       className="video-editor"
@@ -751,6 +762,7 @@ function VideoEditor() {
             onKeyframeAdd={handleKeyframeAdd}
             onKeyframeRemove={handleKeyframeRemove}
             onKeyframeUpdate={handleKeyframeUpdate}
+            onClipResize={handleClipResize}
           />
         </div>
       </div>
