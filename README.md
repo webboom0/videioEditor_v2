@@ -1,6 +1,6 @@
-# Video Editor v2
+# Video Editor
 
-비디오 에디터 프로젝트입니다.
+비디오 편집기를 위한 React 애플리케이션입니다.
 
 ## 🆕 새로 추가된 기능
 
@@ -71,12 +71,53 @@
 - 키프레임 애니메이션
 - 타임라인 편집
 
-## 설치 및 실행
+## 설치
 
 ```bash
 npm install
-npm start
 ```
+
+## 개발 서버 실행
+
+### 한 번에 실행 (권장)
+```bash
+npm run dev
+```
+- Express 서버 (포트 6060)와 React 개발 서버 (포트 3000)를 동시에 실행
+- 브라우저가 자동으로 열립니다
+
+### 개별 실행
+```bash
+# Express 서버만 실행 (포트 6060)
+npm run dev:server
+
+# React 개발 서버만 실행 (포트 3000)
+npm run dev:client
+```
+
+## 빌드
+
+```bash
+npm run build
+```
+
+## 주요 기능
+
+- 비디오 편집 및 타임라인 관리
+- 템플릿 시스템 (저장/불러오기)
+- 키프레임 애니메이션
+- 레이어 기반 편집
+- 실시간 프리뷰
+
+## 서버 API
+
+- `GET /api/templates` - 템플릿 목록 조회
+- `POST /api/save-template` - 템플릿 저장
+
+## 포트 정보
+
+- **Express 서버**: 6060 (API 서버)
+- **React 개발 서버**: 3000 (클라이언트)
 
 ## 기술 스택
 

@@ -13,6 +13,9 @@ function Timeline({
   onKeyframeAdd,
   onKeyframeRemove,
   onKeyframeUpdate,
+  onKeyframeSelect,
+  onKeyframeDeselect,
+  selectedKeyframe,
   onClipResize,
 }) {
   const TIMELINE_DURATION = 180; // 3분(초)
@@ -82,6 +85,9 @@ function Timeline({
     const percent = x / rect.width;
     const newTime = Math.round(percent * TIMELINE_DURATION);
     onPlayheadChange && onPlayheadChange(newTime);
+    
+    // 타임라인 빈 공간 클릭 시 키프레임 선택 해제
+    onKeyframeDeselect && onKeyframeDeselect();
   };
 
   // 클립 리사이즈 핸들 드래그
@@ -146,10 +152,17 @@ function Timeline({
       return null;
     }
 
+    const clipIndex = mediaFiles.indexOf(clip);
+
     return clip.animation.map((keyframe, idx) => {
       // 키프레임의 상대적 시간을 클립 내에서의 위치로 변환
       const keyframeTime = keyframe.time;
       const relativePosition = (keyframeTime / clip.duration) * 100;
+      
+      // 선택된 키프레임인지 확인
+      const isSelected = selectedKeyframe && 
+                        selectedKeyframe.layerIndex === clipIndex && 
+                        selectedKeyframe.keyframeIndex === idx;
       
       // Easing 타입에 따른 색상 결정
       const getKeyframeColor = (easing) => {
@@ -170,19 +183,20 @@ function Timeline({
       return (
         <div
           key={`keyframe-${idx}`}
-          className="timeline-keyframe"
+          className={`timeline-keyframe${isSelected ? ' selected' : ''}`}
           style={{
             left: `${relativePosition}%`,
             position: 'absolute',
             top: '50%',
             transform: 'translate(-50%, -50%)',
-            width: '8px',
-            height: '8px',
-            backgroundColor: colors.bg,
+            width: isSelected ? '12px' : '8px',
+            height: isSelected ? '12px' : '8px',
+            backgroundColor: isSelected ? '#ff0000' : colors.bg,
             borderRadius: '50%',
-            border: `1px solid ${colors.border}`,
+            border: `2px solid ${isSelected ? '#ffffff' : colors.border}`,
             cursor: 'grab',
-            zIndex: 5,
+            zIndex: isSelected ? 10 : 5,
+            boxShadow: isSelected ? '0 0 8px rgba(255, 0, 0, 0.8)' : 'none',
           }}
           title={`키프레임 ${idx + 1}: ${keyframeTime}s (${keyframe.easing || 'linear'}) - 드래그하여 시간 조정, 더블클릭하여 편집`}
           onMouseDown={(e) => handleKeyframeDragStart(e, clip, idx)}
@@ -191,6 +205,13 @@ function Timeline({
             // 키프레임 시간으로 플레이헤드 이동
             const absoluteTime = clip.start + keyframeTime;
             onPlayheadChange && onPlayheadChange(absoluteTime);
+            
+            // 해당 객체 선택
+            const clipIndex = mediaFiles.indexOf(clip);
+            onSelectLayer && onSelectLayer(clipIndex);
+            
+            // 키프레임 선택
+            onKeyframeSelect && onKeyframeSelect(clipIndex, idx);
           }}
           onDoubleClick={(e) => handleKeyframeDoubleClick(e, clip, idx)}
         />

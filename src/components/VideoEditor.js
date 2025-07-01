@@ -47,6 +47,12 @@ function VideoEditor() {
 
   const [selectedEffect, setSelectedEffect] = useState(null);
 
+  const [showNewTemplateModal, setShowNewTemplateModal] = useState(false);
+
+  const [newTemplateName, setNewTemplateName] = useState("");
+
+  const [currentTemplateFile, setCurrentTemplateFile] = useState(null);
+
   const mediaLibraryRef = useRef(null);
   
   // Canvas 컨테이너 ref 추가
@@ -55,6 +61,9 @@ function VideoEditor() {
   // 화질, 줌, 뷰포트 상태 추가
   const [quality, setQuality] = useState(0.4); // 0.2, 0.4, 0.8
   const [zoom, setZoom] = useState(1); // 1 = 100%
+
+  // 선택된 키프레임 상태 추가
+  const [selectedKeyframe, setSelectedKeyframe] = useState(null); // { layerIndex, keyframeIndex }
 
   useEffect(() => {
     if (!showTemplates) return;
@@ -83,13 +92,61 @@ function VideoEditor() {
     }
   }, []);
 
-  // layers가 바뀔 때마다 localStorage에 저장
+  // 템플릿 목록 로드
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        console.log('템플릿 목록 로드 시작...');
+        
+        // 먼저 서버 API로 시도
+        const response = await fetch('http://localhost:6060/api/templates');
+        if (response.ok) {
+          const templates = await response.json();
+          console.log('서버에서 로드된 템플릿:', templates);
+          setTemplateFiles(templates);
+          return;
+        }
+      } catch (error) {
+        console.log('서버 API 접근 실패, 대체 방법 시도...', error);
+      }
 
+      // 서버가 없거나 실패한 경우, 직접 public/template 폴더 스캔 시도
+      try {
+        const response = await fetch('/template/');
+        if (response.ok) {
+          // HTML 응답을 파싱해서 JSON 파일 목록 추출
+          const html = await response.text();
+          const jsonFiles = html.match(/href="([^"]+\.json)"/g);
+          if (jsonFiles) {
+            const templates = jsonFiles
+              .map(match => match.match(/href="([^"]+\.json)"/)[1])
+              .map(filename => filename.replace('.json', ''))
+              .filter(name => name && name !== '');
+            console.log('직접 스캔으로 찾은 템플릿:', templates);
+            setTemplateFiles(templates);
+            return;
+          }
+        }
+      } catch (error) {
+        console.log('직접 스캔 실패:', error);
+      }
+
+      // 모든 방법이 실패한 경우 기본 템플릿 사용
+      console.log('기본 템플릿 목록 사용');
+      setTemplateFiles(["DRAMA", "LOVE", "WEDDING_01"]);
+    };
+
+    loadTemplates();
+  }, []);
+
+  // layers가 바뀔 때마다 localStorage에 저장 (임시 비활성화)
+  /*
   useEffect(() => {
     if (layers.length > 0) {
       localStorage.setItem("layers", JSON.stringify(layers));
     }
   }, [layers]);
+  */
 
   // 애니메이션 프레임
 
@@ -175,9 +232,13 @@ function VideoEditor() {
       // input, textarea, select 등에서는 무시
       const tag = e.target.tagName.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+      
       if (e.code === 'Space') {
         e.preventDefault();
         setIsPlaying((p) => !p);
+      } else if (e.code === 'Escape') {
+        // ESC 키로 키프레임 선택 해제
+        handleKeyframeDeselect();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -300,6 +361,17 @@ function VideoEditor() {
     // CanvasPreview가 자동으로 업데이트됨
   };
 
+  // 키프레임 선택 핸들러 추가
+  const handleKeyframeSelect = (layerIndex, keyframeIndex) => {
+    setSelectedKeyframe({ layerIndex, keyframeIndex });
+    setSelectedLayerIndex(layerIndex);
+  };
+
+  // 키프레임 선택 해제 핸들러 추가
+  const handleKeyframeDeselect = () => {
+    setSelectedKeyframe(null);
+  };
+
   const handlePlayheadChange = (newTime) => {
     setPlayhead(newTime);
   };
@@ -369,10 +441,22 @@ function VideoEditor() {
   };
 
   // 템플릿 내보내기 함수 추가
-  const handleExportTemplate = () => {
+  const handleExportTemplate = async () => {
     if (layers.length === 0) {
-      alert("저장할 레이어가 없습니다.");
+      console.log("저장할 레이어가 없습니다.");
       return;
+    }
+
+    let templateName;
+    
+    // 현재 불러온 템플릿이 있으면 해당 파일명 사용, 없으면 기본 이름 사용
+    if (currentTemplateFile) {
+      templateName = currentTemplateFile;
+      console.log(`현재 템플릿 "${currentTemplateFile}"을 덮어씁니다.`);
+    } else {
+      // 기본 이름 사용
+      templateName = `template_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`;
+      console.log(`새 템플릿 "${templateName}"으로 저장합니다.`);
     }
 
     // 현재 layers 상태를 템플릿 JSON으로 변환
@@ -382,16 +466,48 @@ function VideoEditor() {
       return cleanLayer;
     });
 
-    // JSON 파일로 다운로드
-    const blob = new Blob([JSON.stringify(templateData, null, 2)], {
-      type: "application/json"
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `template_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      console.log('서버에 저장 요청 중...');
+      
+      const response = await fetch('http://localhost:6060/api/save-template', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: templateName,
+          template: templateData
+        })
+      });
+
+      if (response.ok) {
+        console.log('템플릿이 성공적으로 저장되었습니다.');
+        
+        // 템플릿 목록 자동 갱신
+        try {
+          const templatesResponse = await fetch('http://localhost:6060/api/templates');
+          if (templatesResponse.ok) {
+            const templates = await templatesResponse.json();
+            setTemplateFiles(templates);
+            console.log('템플릿 목록이 갱신되었습니다.');
+          }
+        } catch (error) {
+          console.log('템플릿 목록 갱신 실패:', error);
+        }
+        
+        // 현재 템플릿 파일명 업데이트
+        setCurrentTemplateFile(templateName);
+        
+        alert(`템플릿 "${templateName}"이 성공적으로 저장되었습니다.`);
+      } else {
+        throw new Error(`서버 응답 오류: ${response.status}`);
+      }
+      
+    } catch (error) {
+      console.error('=== 템플릿 저장 실패 ===');
+      console.error('에러 상세:', error);
+      alert('템플릿 저장에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   const handleApplyTemplate = (template) => {
@@ -406,6 +522,14 @@ function VideoEditor() {
 
   const handleSelectTemplateFile = async (file) => {
     try {
+      // 기존 작업이 있으면 확인
+      if (layers.length > 0) {
+        const confirmLoad = confirm(
+          `현재 작업 중인 내용이 있습니다.\n"${file}" 템플릿을 불러오면 현재 작업이 사라집니다.\n계속하시겠습니까?`
+        );
+        if (!confirmLoad) return;
+      }
+
       const res = await fetch(`/template/${file}.json`);
 
       if (!res.ok) throw new Error("템플릿 파일을 불러올 수 없습니다.");
@@ -423,6 +547,9 @@ function VideoEditor() {
       }
 
       setLayers(layersArr);
+      
+      // 현재 템플릿 파일명 저장
+      setCurrentTemplateFile(file);
 
       // 오디오 트랙 찾기
 
@@ -435,6 +562,12 @@ function VideoEditor() {
       setPlayhead(0);
 
       setIsPlaying(false);
+
+      // 템플릿 모달 닫기
+      setShowTemplates(false);
+      setSelectedEffect(null);
+
+      alert(`${file} 템플릿을 불러왔습니다.`);
     } catch (e) {
       alert("템플릿 파일을 불러오지 못했습니다.");
     }
@@ -442,9 +575,22 @@ function VideoEditor() {
 
   // 템플릿 버튼 클릭 시
 
-  const handleTemplateButtonClick = () => {
+  const handleTemplateButtonClick = async () => {
     setShowTemplates(true);
-    setTemplateFiles(["DRAMA", "LOVE", "WEDDING_01"]);
+    
+    // 서버에서 최신 템플릿 목록 가져오기
+    try {
+      const response = await fetch('http://localhost:6060/api/templates');
+      if (response.ok) {
+        const templates = await response.json();
+        setTemplateFiles(templates);
+      } else {
+        // 서버가 없으면 현재 목록 유지
+        console.log('서버에서 템플릿 목록을 가져올 수 없음');
+      }
+    } catch (error) {
+      console.log('템플릿 목록 갱신 실패:', error);
+    }
   };
 
   // 템플릿 선택 시
@@ -465,6 +611,78 @@ function VideoEditor() {
   const handleTemplateModalClose = () => {
     setShowTemplates(false);
     setSelectedEffect(null);
+  };
+
+  const handleCreateNewTemplate = () => {
+    setShowNewTemplateModal(true);
+  };
+
+  const handleSaveNewTemplate = async () => {
+    if (!newTemplateName.trim()) {
+      console.log("템플릿 이름을 입력해주세요.");
+      return;
+    }
+
+    // 템플릿 이름에서 특수문자 제거 및 공백을 언더스코어로 변경
+    const sanitizedName = newTemplateName.trim().replace(/[^a-zA-Z0-9가-힣]/g, '_');
+    
+    if (templateFiles.includes(sanitizedName)) {
+      console.log("이미 존재하는 템플릿 이름입니다.");
+      return;
+    }
+
+    try {
+      // 빈 템플릿 데이터 생성
+      const emptyTemplate = [
+        {
+          "type": "text",
+          "text": "새 템플릿",
+          "x": 200,
+          "y": 100,
+          "start": 0,
+          "duration": 10,
+          "align": "center",
+          "verticalAlign": "middle",
+          "color": "#fff",
+          "fontSize": 48,
+          "fontFamily": "Arial",
+          "animation": [
+            { "time": 0, "x": 200, "y": 100, "scale": 1, "opacity": 1 },
+            { "time": 10, "x": 200, "y": 100, "scale": 1, "opacity": 1 }
+          ]
+        }
+      ];
+
+      // 서버에 템플릿 파일 저장 요청
+      const response = await fetch('http://localhost:6060/api/save-template', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: sanitizedName,
+          template: emptyTemplate
+        })
+      });
+
+      if (response.ok) {
+        // 템플릿 목록에 새 템플릿 추가
+        setTemplateFiles(prev => [...prev, sanitizedName]);
+        setNewTemplateName("");
+        setShowNewTemplateModal(false);
+        console.log("새 템플릿이 생성되었습니다!");
+      } else {
+        throw new Error("템플릿 저장에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("템플릿 생성 오류:", error);
+      console.log("템플릿 생성에 실패했습니다.");
+    }
+  };
+
+  const handleNewTemplateModalClose = () => {
+    setShowNewTemplateModal(false);
+    setNewTemplateName("");
   };
 
   const selectedLayer =
@@ -576,6 +794,108 @@ function VideoEditor() {
     );
   };
 
+  const handleSaveProjectToServer = async () => {
+    // prompt 대신 고정된 이름 사용 (테스트용)
+    const name = 'project_' + Date.now();
+    const sanitizedName = name.trim().replace(/[^a-zA-Z0-9가-힣]/g, '_');
+    console.log('저장할 프로젝트 이름:', sanitizedName);
+    
+    try {
+      const response = await fetch('http://localhost:6060/api/save-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: sanitizedName, template: layers })
+      });
+      if (response.ok) {
+        console.log('작업이 서버에 저장되었습니다!');
+        // 저장 후 템플릿 목록 갱신
+        const templatesRes = await fetch('http://localhost:6060/api/templates');
+        if (templatesRes.ok) {
+          const templates = await templatesRes.json();
+          setTemplateFiles(templates);
+        }
+      } else {
+        throw new Error("저장에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("저장 오류:", error);
+      console.log("저장에 실패했습니다.");
+    }
+  };
+
+  const handleNewProject = () => {
+    console.log("새 프로젝트를 시작합니다.");
+    setLayers([]);
+    setPlayhead(0);
+    setIsPlaying(false);
+    setCurrentTemplateFile(null);
+    console.log("새 프로젝트가 시작되었습니다.");
+  };
+
+  const saveTemplate = async () => {
+    // 현재 상태를 미리 복사
+    const currentLayers = [...layers];
+    const currentTemplateFileName = currentTemplateFile;
+    
+    console.log('=== 템플릿 저장 시작 ===');
+    console.log('현재 레이어 수:', currentLayers.length);
+    console.log('현재 템플릿 파일:', currentTemplateFileName);
+    
+    // prompt 대신 고정된 이름 사용 (테스트용)
+    const templateName = currentTemplateFileName || 'test_template_' + Date.now();
+    console.log('사용할 템플릿 이름:', templateName);
+
+    // 현재 layers 상태를 템플릿 JSON으로 변환
+    const templateData = currentLayers.map(layer => {
+      // 불필요한 속성 제거 (예: globalIndex 등)
+      const { globalIndex, ...cleanLayer } = layer;
+      return cleanLayer;
+    });
+
+    try {
+      console.log('서버에 저장 요청 중...');
+      
+      const response = await fetch('http://localhost:6060/api/save-template', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: templateName,
+          template: templateData
+        })
+      });
+
+      if (response.ok) {
+        console.log('템플릿이 성공적으로 저장되었습니다.');
+        
+        // 템플릿 목록 자동 갱신
+        try {
+          const templatesResponse = await fetch('http://localhost:6060/api/templates');
+          if (templatesResponse.ok) {
+            const templates = await templatesResponse.json();
+            setTemplateFiles(templates);
+            console.log('템플릿 목록이 갱신되었습니다.');
+          }
+        } catch (error) {
+          console.log('템플릿 목록 갱신 실패:', error);
+        }
+        
+        // 현재 템플릿 파일명 업데이트
+        setCurrentTemplateFile(templateName);
+        
+        alert(`템플릿 "${templateName}"이 성공적으로 저장되었습니다.`);
+      } else {
+        throw new Error(`서버 응답 오류: ${response.status}`);
+      }
+      
+    } catch (error) {
+      console.error('=== 템플릿 저장 실패 ===');
+      console.error('에러 상세:', error);
+      alert('템플릿 저장에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
   return (
     <div 
       className="video-editor"
@@ -638,7 +958,7 @@ function VideoEditor() {
                     <li key={file}>
                       <button onClick={() => handleTemplateFileClick(file)}>
                         <img
-                          src={`/template/thumb/${file}.png`}
+                          src={`/template/thumb/${file}.svg`}
                           alt={`${file} 썸네일`}
                         />
 
@@ -646,11 +966,93 @@ function VideoEditor() {
                       </button>
                     </li>
                   ))}
+                  <li>
+                    <button 
+                      onClick={handleCreateNewTemplate}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      <i className="fa fa-plus" style={{ fontSize: '24px', marginBottom: '8px' }}></i>
+                      새 템플릿
+                    </button>
+                  </li>
                 </ul>
 
                 <button
                   className="close-btn"
                   onClick={handleTemplateModalClose}
+                >
+                  <span className="blind">닫기</span>
+                </button>
+              </div>
+            )}
+
+            {showNewTemplateModal && (
+              <div className="template-list-modal">
+                <h4>새 템플릿 생성</h4>
+                <div style={{ padding: '20px', textAlign: 'center' }}>
+                  <p style={{ marginBottom: '20px', color: '#f3f3f3' }}>
+                    새 템플릿의 이름을 입력해주세요
+                  </p>
+                  <input
+                    type="text"
+                    value={newTemplateName}
+                    onChange={(e) => setNewTemplateName(e.target.value)}
+                    placeholder="템플릿 이름 입력"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      fontSize: '16px',
+                      marginBottom: '20px',
+                      borderRadius: '4px',
+                      border: '1px solid #444'
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSaveNewTemplate();
+                      }
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button
+                      onClick={handleSaveNewTemplate}
+                      style={{
+                        padding: '10px 20px',
+                        background: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      생성
+                    </button>
+                    <button
+                      onClick={handleNewTemplateModalClose}
+                      style={{
+                        padding: '10px 20px',
+                        background: '#6c757d',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+                <button
+                  className="close-btn"
+                  onClick={handleNewTemplateModalClose}
                 >
                   <span className="blind">닫기</span>
                 </button>
@@ -678,6 +1080,8 @@ function VideoEditor() {
             containerRef={canvasContainerRef}
             quality={quality}
             zoom={zoom}
+            selectedKeyframe={selectedKeyframe}
+            onKeyframeUpdate={handleKeyframeUpdate}
           />
           {/* 미니맵: 오른쪽 하단 */}
           <CanvasMiniMap
@@ -743,6 +1147,14 @@ function VideoEditor() {
             <button onClick={handleExportTemplate}>
               템플릿 저장
             </button>
+
+            <button onClick={handleSaveProjectToServer}>
+              작업 저장
+            </button>
+
+            <button onClick={handleNewProject}>
+              새로 시작
+            </button>
           </div>
 
           <Timeline
@@ -762,6 +1174,9 @@ function VideoEditor() {
             onKeyframeAdd={handleKeyframeAdd}
             onKeyframeRemove={handleKeyframeRemove}
             onKeyframeUpdate={handleKeyframeUpdate}
+            onKeyframeSelect={handleKeyframeSelect}
+            onKeyframeDeselect={handleKeyframeDeselect}
+            selectedKeyframe={selectedKeyframe}
             onClipResize={handleClipResize}
           />
         </div>
@@ -777,6 +1192,8 @@ function VideoEditor() {
               )
             );
           }}
+          selectedKeyframe={selectedKeyframe}
+          onKeyframeUpdate={handleKeyframeUpdate}
         />
       </div>
 

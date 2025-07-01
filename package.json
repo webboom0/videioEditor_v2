@@ -4,8 +4,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack serve --mode development --open",
-    "build": "webpack --mode production"
+    "start": "webpack serve --mode development --open --port 3000",
+    "build": "webpack --mode production",
+    "server": "node server.js",
+    "dev": "concurrently --names \"server,client\" --prefix-colors \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "node server.js",
+    "dev:client": "webpack serve --mode development --port 3000"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +18,9 @@
   "dependencies": {
     "@ffmpeg/core": "^0.12.10",
     "@ffmpeg/ffmpeg": "^0.12.15",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "multer": "^2.0.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -22,6 +29,7 @@
     "@babel/preset-env": "^7.27.2",
     "@babel/preset-react": "^7.27.1",
     "babel-loader": "^10.0.0",
+    "concurrently": "^9.2.0",
     "css-loader": "^7.1.2",
     "style-loader": "^4.0.0",
     "webpack": "^5.99.9",
