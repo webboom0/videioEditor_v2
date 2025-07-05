@@ -167,6 +167,15 @@ function Timeline({
       
       const colors = getKeyframeColor(keyframe.easing);
       
+      // 더블클릭 시 삭제 확인
+      const handleKeyframeDoubleClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.confirm('이 키프레임을 삭제하시겠습니까?')) {
+          onKeyframeRemove && onKeyframeRemove(mediaFiles.indexOf(clip), keyframeTime);
+        }
+      };
+
       return (
         <div
           key={`keyframe-${idx}`}
@@ -184,7 +193,7 @@ function Timeline({
             cursor: 'grab',
             zIndex: 5,
           }}
-          title={`키프레임 ${idx + 1}: ${keyframeTime}s (${keyframe.easing || 'linear'}) - 드래그하여 시간 조정, 더블클릭하여 편집`}
+          title={`키프레임 ${idx + 1}: ${keyframeTime}s (${keyframe.easing || 'linear'}) - 드래그하여 시간 조정, 더블클릭하여 삭제`}
           onMouseDown={(e) => handleKeyframeDragStart(e, clip, idx)}
           onClick={(e) => {
             e.stopPropagation();
@@ -192,7 +201,7 @@ function Timeline({
             const absoluteTime = clip.start + keyframeTime;
             onPlayheadChange && onPlayheadChange(absoluteTime);
           }}
-          onDoubleClick={(e) => handleKeyframeDoubleClick(e, clip, idx)}
+          onDoubleClick={handleKeyframeDoubleClick}
         />
       );
     });
@@ -240,115 +249,57 @@ function Timeline({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // 키프레임 값 편집 모달
-  const handleKeyframeDoubleClick = (e, clip, keyframeIndex) => {
+  // 클립 더블클릭 시 키프레임 생성
+  const handleClipDoubleClick = (e, clip, clipIndex) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    const keyframe = clip.animation[keyframeIndex];
-    const clipIndex = mediaFiles.indexOf(clip);
-    
-    // 편집 모달 생성
-    const modal = document.createElement('div');
-    modal.className = 'keyframe-edit-modal';
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    `;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = x / rect.width;
+    const time = Math.max(0, Math.min(clip.duration, percent * clip.duration));
+    const absTime = clip.start + time;
 
-    const modalContent = document.createElement('div');
-    modalContent.style.cssText = `
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      min-width: 300px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    `;
+    // 이미 해당 시간에 키프레임이 있으면 무시
+    if (Array.isArray(clip.animation) && clip.animation.some(kf => Math.abs(kf.time - time) < 0.1)) {
+      return;
+    }
 
-    modalContent.innerHTML = `
-      <h3>키프레임 편집 (${keyframe.time.toFixed(1)}s)</h3>
-      <div style="margin: 10px 0;">
-        <label>시간 (초):</label>
-        <input type="number" step="0.1" min="0" max="${clip.duration}" 
-               value="${keyframe.time}" id="keyframe-time" style="width: 100%; margin-top: 5px;">
-      </div>
-      <div style="margin: 10px 0;">
-        <label>X 위치:</label>
-        <input type="number" value="${keyframe.x || 0}" id="keyframe-x" style="width: 100%; margin-top: 5px;">
-      </div>
-      <div style="margin: 10px 0;">
-        <label>Y 위치:</label>
-        <input type="number" value="${keyframe.y || 0}" id="keyframe-y" style="width: 100%; margin-top: 5px;">
-      </div>
-      <div style="margin: 10px 0;">
-        <label>크기:</label>
-        <input type="number" step="0.1" value="${keyframe.scale || 1}" id="keyframe-scale" style="width: 100%; margin-top: 5px;">
-      </div>
-      <div style="margin: 10px 0;">
-        <label>투명도:</label>
-        <input type="number" step="0.1" min="0" max="1" value="${keyframe.opacity || 1}" id="keyframe-opacity" style="width: 100%; margin-top: 5px;">
-      </div>
-      <div style="margin: 10px 0;">
-        <label>애니메이션 곡선:</label>
-        <select id="keyframe-easing" style="width: 100%; margin-top: 5px;">
-          <option value="linear" ${(keyframe.easing || 'linear') === 'linear' ? 'selected' : ''}>Linear (선형)</option>
-          <option value="easeIn" ${(keyframe.easing || 'linear') === 'easeIn' ? 'selected' : ''}>Ease In (천천히 시작)</option>
-          <option value="easeOut" ${(keyframe.easing || 'linear') === 'easeOut' ? 'selected' : ''}>Ease Out (천천히 끝남)</option>
-          <option value="easeInOut" ${(keyframe.easing || 'linear') === 'easeInOut' ? 'selected' : ''}>Ease In Out (천천히 시작하고 끝남)</option>
-        </select>
-      </div>
-      <div style="margin-top: 20px; text-align: right;">
-        <button id="keyframe-cancel" style="margin-right: 10px; padding: 8px 16px;">취소</button>
-        <button id="keyframe-save" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px;">저장</button>
-      </div>
-    `;
-
-    modal.appendChild(modalContent);
-    document.body.appendChild(modal);
-
-    // 이벤트 핸들러
-    const saveButton = modal.querySelector('#keyframe-save');
-    const cancelButton = modal.querySelector('#keyframe-cancel');
-
-    const saveKeyframe = () => {
-      const time = parseFloat(modal.querySelector('#keyframe-time').value);
-      const x = parseFloat(modal.querySelector('#keyframe-x').value);
-      const y = parseFloat(modal.querySelector('#keyframe-y').value);
-      const scale = parseFloat(modal.querySelector('#keyframe-scale').value);
-      const opacity = parseFloat(modal.querySelector('#keyframe-opacity').value);
-      const easing = modal.querySelector('#keyframe-easing').value;
-
-      const updatedKeyframe = { time, x, y, scale, opacity, easing };
-      onKeyframeUpdate && onKeyframeUpdate(clipIndex, keyframeIndex, updatedKeyframe);
-      document.body.removeChild(modal);
-    };
-
-    saveButton.onclick = saveKeyframe;
-    cancelButton.onclick = () => document.body.removeChild(modal);
-
-    // Enter 키로 저장
-    modal.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        saveKeyframe();
-      } else if (e.key === 'Escape') {
-        document.body.removeChild(modal);
+    let newKF = { time, x: clip.x || 0, y: clip.y || 0, scale: clip.scale || 1, opacity: clip.opacity || 1 };
+    const anim = Array.isArray(clip.animation) ? [...clip.animation] : [];
+    if (anim.length === 0) {
+      // 키프레임이 하나도 없으면 현재 값
+      // 이미 newKF에 반영됨
+    } else {
+      // 시간 기준으로 앞뒤 키프레임 찾기
+      const sorted = anim.slice().sort((a, b) => a.time - b.time);
+      let prev = sorted[0], next = sorted[sorted.length - 1];
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].time > time) {
+          next = sorted[i];
+          prev = sorted[i - 1];
+          break;
+        }
       }
-    });
-
-    // 모달 외부 클릭으로 닫기
-    modal.onclick = (e) => {
-      if (e.target === modal) {
-        document.body.removeChild(modal);
+      if (time <= sorted[0].time) {
+        // 맨 앞이면 첫 키프레임 값 복사
+        newKF = { ...sorted[0], time };
+      } else if (time >= sorted[sorted.length - 1].time) {
+        // 맨 뒤면 마지막 키프레임 값 복사
+        newKF = { ...sorted[sorted.length - 1], time };
+      } else {
+        // 중간이면 prev/next 보간
+        const t = (time - prev.time) / (next.time - prev.time);
+        newKF = {
+          time,
+          x: (prev.x ?? 0) + ((next.x ?? 0) - (prev.x ?? 0)) * t,
+          y: (prev.y ?? 0) + ((next.y ?? 0) - (prev.y ?? 0)) * t,
+          scale: (prev.scale ?? 1) + ((next.scale ?? 1) - (prev.scale ?? 1)) * t,
+          opacity: (prev.opacity ?? 1) + ((next.opacity ?? 1) - (prev.opacity ?? 1)) * t,
+          easing: prev.easing || 'linear',
+        };
       }
-    };
+    }
+    onKeyframeAdd && onKeyframeAdd(clipIndex, time, newKF);
   };
 
   // 컨텍스트 메뉴 처리
@@ -473,6 +424,7 @@ function Timeline({
                   onSelectLayer && onSelectLayer(i);
                 }}
                 onContextMenu={(e) => handleClipContextMenu(e, i)}
+                onDoubleClick={(e) => handleClipDoubleClick(e, clip, i)}
               >
                 {/* 왼쪽 리사이즈 핸들 */}
                 <div

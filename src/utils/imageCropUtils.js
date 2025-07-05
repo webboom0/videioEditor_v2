@@ -75,7 +75,7 @@ export function drawCroppedImage(ctx, img, options = {}) {
  * @param {Object} options - 크롭 옵션
  * @returns {Object} 크롭 데이터
  */
-function calculateCrop(img, options) {
+export function calculateCrop(img, options) {
   const {
     scaleMode,
     cropMode,

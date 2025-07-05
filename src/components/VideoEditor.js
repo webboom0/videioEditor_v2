@@ -56,6 +56,10 @@ function VideoEditor() {
   const [quality, setQuality] = useState(0.4); // 0.2, 0.4, 0.8
   const [zoom, setZoom] = useState(1); // 1 = 100%
 
+  // requestAnimationFrame 최적화용 ref
+  const rafMoveRef = useRef();
+  const rafResizeRef = useRef();
+
   useEffect(() => {
     if (!showTemplates) return;
 
@@ -231,30 +235,21 @@ function VideoEditor() {
   };
 
   // 키프레임 추가 핸들러
-  const handleKeyframeAdd = (layerIndex, time) => {
+  const handleKeyframeAdd = (layerIndex, time, value) => {
     setLayers((prevLayers) => {
       const layer = prevLayers[layerIndex];
       if (!layer) return prevLayers;
-
-      // 현재 레이어의 상태를 기반으로 새 키프레임 생성
-      const newKeyframe = {
+      const newKeyframe = value || {
         time: time,
         x: layer.x || 0,
         y: layer.y || 0,
         scale: layer.scale || 1,
         opacity: layer.opacity || 1,
       };
-
-      // 기존 애니메이션 배열이 없으면 생성
       const animation = layer.animation || [];
-      
-      // 시간 순서대로 정렬하여 삽입
       const newAnimation = [...animation, newKeyframe].sort((a, b) => a.time - b.time);
-
-      return prevLayers.map((l, i) => 
-        i === layerIndex 
-          ? { ...l, animation: newAnimation }
-          : l
+      return prevLayers.map((l, i) =>
+        i === layerIndex ? { ...l, animation: newAnimation } : l
       );
     });
   };
@@ -470,9 +465,8 @@ function VideoEditor() {
   const selectedLayer =
     selectedLayerIndex !== null ? layers[selectedLayerIndex] : null;
 
-  const canvasWidth = 1280;
-
-  const canvasHeight = Math.round((canvasWidth * 9) / 16);
+  const canvasWidth = 5000;
+  const canvasHeight = 5000;
 
   // 미니맵에서 스크롤 연동 함수
   function handleMiniMapMove(newScroll) {
@@ -574,6 +568,47 @@ function VideoEditor() {
           : layer
       )
     );
+  };
+
+  // 키프레임 이동 핸들러 (핸들 드래그, rAF 최적화)
+  const handleMoveKeyframe = (dx, dy, kfIdx) => {
+    if (rafMoveRef.current) cancelAnimationFrame(rafMoveRef.current);
+    rafMoveRef.current = requestAnimationFrame(() => {
+      setLayers((prevLayers) => {
+        if (selectedLayerIndex == null) return prevLayers;
+        const layer = prevLayers[selectedLayerIndex];
+        if (!layer || !Array.isArray(layer.animation)) return prevLayers;
+        const newAnim = layer.animation.map((kf, i) =>
+          i === kfIdx ? { ...kf, x: (kf.x || 0) + dx, y: (kf.y || 0) + dy } : kf
+        );
+        return prevLayers.map((l, i) =>
+          i === selectedLayerIndex ? { ...l, animation: newAnim } : l
+        );
+      });
+    });
+  };
+  // 키프레임 크기 핸들러 (핸들 드래그, rAF 최적화)
+  const handleResizeKeyframe = (dx, dy, dir, kfIdx) => {
+    if (rafResizeRef.current) cancelAnimationFrame(rafResizeRef.current);
+    rafResizeRef.current = requestAnimationFrame(() => {
+      setLayers((prevLayers) => {
+        if (selectedLayerIndex == null) return prevLayers;
+        const layer = prevLayers[selectedLayerIndex];
+        if (!layer || !Array.isArray(layer.animation)) return prevLayers;
+        const kf = layer.animation[kfIdx];
+        let scale = kf.scale || 1;
+        const delta = (Math.abs(dx) + Math.abs(dy)) / 2;
+        if (dir === 'topleft' || dir === 'bottomright') scale += dx - dy;
+        else scale += -dx - dy;
+        scale = Math.max(0.1, scale);
+        const newAnim = layer.animation.map((kf2, i) =>
+          i === kfIdx ? { ...kf2, scale } : kf2
+        );
+        return prevLayers.map((l, i) =>
+          i === selectedLayerIndex ? { ...l, animation: newAnim } : l
+        );
+      });
+    });
   };
 
   return (
@@ -678,6 +713,8 @@ function VideoEditor() {
             containerRef={canvasContainerRef}
             quality={quality}
             zoom={zoom}
+            onMoveKeyframe={handleMoveKeyframe}
+            onResizeKeyframe={handleResizeKeyframe}
           />
           {/* 미니맵: 오른쪽 하단 */}
           <CanvasMiniMap

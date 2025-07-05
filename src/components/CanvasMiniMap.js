@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 
 function CanvasMiniMap({
-  canvasWidth = 1280,
-  canvasHeight = 720,
+  canvasWidth = 5000, // 작업 공간 확장
+  canvasHeight = 5000,
   zoom = 1,
   containerRef,
   onMove
@@ -11,6 +11,12 @@ function CanvasMiniMap({
   const miniHeight = 90;
   const scaleX = miniWidth / (canvasWidth * zoom);
   const scaleY = miniHeight / (canvasHeight * zoom);
+
+  // 내보내기 영역 설정 (1920x1080, 중앙 고정)
+  const exportWidth = 1920;
+  const exportHeight = 1080;
+  const exportX = (canvasWidth - exportWidth) / 2;
+  const exportY = (canvasHeight - exportHeight) / 2;
 
   // 컨테이너 스크롤 상태 추적
   const [scroll, setScroll] = useState({ left: 0, top: 0, width: miniWidth, height: miniHeight });
@@ -44,6 +50,12 @@ function CanvasMiniMap({
   const viewY = scroll.top * scaleY;
   const viewW = scroll.width * scaleX;
   const viewH = scroll.height * scaleY;
+
+  // 내보내기 영역 미니맵 좌표
+  const exportMiniX = exportX * scaleX;
+  const exportMiniY = exportY * scaleY;
+  const exportMiniW = exportWidth * scaleX;
+  const exportMiniH = exportHeight * scaleY;
 
   // 미니맵 클릭/드래그 시 컨테이너 스크롤 이동
   const isDragging = useRef(false);
@@ -81,6 +93,20 @@ function CanvasMiniMap({
     <div className="canvas-minimap">
       <svg ref={svgRef} width={miniWidth} height={miniHeight} onMouseDown={handleMouseDown} style={{ cursor: 'pointer', display: 'block' }}>
         <rect x={0} y={0} width={miniWidth} height={miniHeight} fill="#222" rx={8} />
+        
+        {/* 내보내기 영역 표시 */}
+        <rect
+          x={exportMiniX}
+          y={exportMiniY}
+          width={exportMiniW}
+          height={exportMiniH}
+          fill="rgba(0,255,0,0.1)"
+          stroke="#00ff00"
+          strokeWidth={1}
+          rx={2}
+        />
+        
+        {/* 뷰포트 영역 */}
         <rect
           x={viewX}
           y={viewY}
