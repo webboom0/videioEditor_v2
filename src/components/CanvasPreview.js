@@ -40,6 +40,8 @@ function CanvasPreview({
   containerRef,
   quality = 0.4,
   zoom = 1,
+  selectedKeyframe,
+  onKeyframeUpdate,
 }) {
   const canvasRef = useRef(null);
   const videoRefs = useRef({});
@@ -60,10 +62,201 @@ function CanvasPreview({
   // === 뷰포트 패닝(마우스 드래그) ===
   const isPanning = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
-  const viewportOffset = useRef({ x: 0, y: 0 }); // 뷰포트 오프셋 추가
+
+  // === 키프레임 드래그 상태 ===
+  const isDraggingKeyframe = useRef(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const dragStartKeyframe = useRef(null);
+  
+  // 커서 상태 관리
+  const [cursor, setCursor] = useState('default');
+
+  // 드래그 상태 추가
+  const [dragMode, setDragMode] = useState(null); // 'move' | 'resize'
+  const dragHandleIndex = useRef(null); // 0:좌상, 1:우상, 2:좌하, 3:우하
+
+  // --- 보간 함수 추가 ---
+  function getCurrentKeyframeValue(layer, currentTime) {
+    if (!Array.isArray(layer.animation) || layer.animation.length === 0) {
+      return {
+        x: layer.x ?? 0,
+        y: layer.y ?? 0,
+        scale: layer.scale ?? 1,
+        opacity: layer.opacity ?? 1,
+      };
+    }
+    const relTime = currentTime - layer.start;
+    let prev = layer.animation[0];
+    let next = layer.animation[layer.animation.length - 1];
+    if (relTime <= prev.time) {
+      return {
+        x: prev.x ?? layer.x ?? 0,
+        y: prev.y ?? layer.y ?? 0,
+        scale: prev.scale ?? layer.scale ?? 1,
+        opacity: prev.opacity ?? layer.opacity ?? 1,
+      };
+    } else if (relTime >= next.time) {
+      return {
+        x: next.x ?? layer.x ?? 0,
+        y: next.y ?? layer.y ?? 0,
+        scale: next.scale ?? layer.scale ?? 1,
+        opacity: next.opacity ?? layer.opacity ?? 1,
+      };
+    } else {
+      for (let i = 1; i < layer.animation.length; i++) {
+        if (layer.animation[i].time > relTime) {
+          next = layer.animation[i];
+          prev = layer.animation[i - 1];
+          break;
+        }
+      }
+      const t = (relTime - prev.time) / (next.time - prev.time);
+      const easedT = applyEasing(t, prev.easing || 'linear');
+      return {
+        x: (prev.x ?? layer.x ?? 0) + ((next.x ?? layer.x ?? 0) - (prev.x ?? layer.x ?? 0)) * easedT,
+        y: (prev.y ?? layer.y ?? 0) + ((next.y ?? layer.y ?? 0) - (prev.y ?? layer.y ?? 0)) * easedT,
+        scale: (prev.scale ?? layer.scale ?? 1) + ((next.scale ?? layer.scale ?? 1) - (prev.scale ?? layer.scale ?? 1)) * easedT,
+        opacity: (prev.opacity ?? layer.opacity ?? 1) + ((next.opacity ?? layer.opacity ?? 1) - (prev.opacity ?? layer.opacity ?? 1)) * easedT,
+      };
+    }
+  }
+  // ---
+
+  // --- drawX, drawY, boxX, boxY를 완전히 일치시키는 함수 도입 ---
+  function getTextDrawAndBox(layer, keyframe, ctx, width, height) {
+    const fontSize = layer.fontSize || 30;
+    const fontFamily = layer.fontFamily || "Arial";
+    const text = layer.text || '';
+    const scale = keyframe?.scale ?? layer.scale ?? 1;
+    ctx.save();
+    ctx.font = `${fontSize * scale}px ${fontFamily}`;
+    const metrics = ctx.measureText(text);
+    const w = metrics.width;
+    const h = fontSize * 1.2 * scale;
+    ctx.restore();
+
+    let drawX = keyframe?.x ?? layer.x ?? 0;
+    let drawY = keyframe?.y ?? layer.y ?? 0;
+    let textAlign = layer.align || "left";
+    let textBaseline = "top";
+    if (layer.align === "center") drawX = width / 2;
+    else if (layer.align === "right") drawX = width - (layer.marginRight || 0);
+    if (layer.verticalAlign === "middle") {
+      textBaseline = "middle";
+      drawY = height / 2;
+    } else if (layer.verticalAlign === "bottom") {
+      textBaseline = "bottom";
+      drawY = height - (layer.marginBottom || 0);
+    }
+    // 바운딩 박스 좌표 계산 (textAlign, textBaseline에 따라)
+    let boxX = drawX, boxY = drawY;
+    if (textAlign === "center") boxX -= w / 2;
+    else if (textAlign === "right") boxX -= w;
+    if (textBaseline === "middle") boxY -= h / 2;
+    else if (textBaseline === "bottom") boxY -= h;
+    return { drawX, drawY, w, h, boxX, boxY, textAlign, textBaseline };
+  }
+  // ---
 
   function handleMouseDown(e) {
     if (e.button !== 0) return;
+    
+    // 키프레임 핸들 클릭 확인
+    if (selectedKeyframe && selectedKeyframe.layerIndex !== null && selectedKeyframe.keyframeIndex !== null) {
+      const selectedLayer = layers[selectedKeyframe.layerIndex];
+      if (selectedLayer && selectedLayer.animation && selectedLayer.animation[selectedKeyframe.keyframeIndex]) {
+        const keyframe = selectedLayer.animation[selectedKeyframe.keyframeIndex];
+        const absoluteTime = selectedLayer.start + keyframe.time;
+        
+        // 현재 시간이 키프레임 시간과 일치하는지 확인
+        if (Math.abs(currentTime - absoluteTime) < 0.1) {
+          const rect = canvasRef.current.getBoundingClientRect();
+          const displayX = e.clientX - rect.left;
+          const displayY = e.clientY - rect.top;
+          
+          // 표시 좌표를 내부 좌표로 변환
+          const scaleX = width / displaySize.width;
+          const scaleY = height / displaySize.height;
+          const internalX = displayX * scaleX;
+          const internalY = displayY * scaleY;
+          
+          if (selectedLayer.type === 'text') {
+            const { drawX, drawY, w, h, boxX, boxY, textAlign, textBaseline } = getTextDrawAndBox(selectedLayer, keyframe, canvasRef.current.getContext("2d"), width, height);
+            const handleSize = 12;
+            const handles = [
+              { x: boxX, y: boxY },
+              { x: boxX + w, y: boxY },
+              { x: boxX, y: boxY + h },
+              { x: boxX + w, y: boxY + h }
+            ];
+            // 핸들 클릭 판정
+            for (let i = 0; i < handles.length; i++) {
+              const handle = handles[i];
+              if (
+                Math.abs(internalX - handle.x) <= handleSize / 2 &&
+                Math.abs(internalY - handle.y) <= handleSize / 2
+              ) {
+                // 크기조절 시작
+                isDraggingKeyframe.current = true;
+                dragStartPos.current = { x: internalX, y: internalY };
+                dragStartKeyframe.current = { ...keyframe };
+                setDragMode('resize');
+                dragHandleIndex.current = i;
+                setCursor('nwse-resize');
+                window.addEventListener('mousemove', handleKeyframeDrag);
+                window.addEventListener('mouseup', handleKeyframeDragEnd);
+                return;
+              }
+            }
+            // 바운딩 박스 내부 클릭: 이동
+            if (
+              internalX >= boxX && internalX <= boxX + w &&
+              internalY >= boxY && internalY <= boxY + h
+            ) {
+              isDraggingKeyframe.current = true;
+              dragStartPos.current = { x: internalX, y: internalY };
+              dragStartKeyframe.current = { ...keyframe };
+              setDragMode('move');
+              setCursor('grabbing');
+              window.addEventListener('mousemove', handleKeyframeDrag);
+              window.addEventListener('mouseup', handleKeyframeDragEnd);
+              return;
+            }
+          }
+          // 키프레임 위치 계산
+          let keyframeX = keyframe.x ?? selectedLayer.x ?? 0;
+          let keyframeY = keyframe.y ?? selectedLayer.y ?? 0;
+          
+          // 정렬 처리
+          if (selectedLayer.align === "center") {
+            keyframeX = width / 2;
+          } else if (selectedLayer.align === "right") {
+            keyframeX = width - (selectedLayer.marginRight || 0);
+          }
+          
+          if (selectedLayer.verticalAlign === "middle") {
+            keyframeY = height / 2;
+          } else if (selectedLayer.verticalAlign === "bottom") {
+            keyframeY = height - (selectedLayer.marginBottom || 0);
+          }
+          
+          // 핸들 영역 확인 (20px 반지름)
+          const distance = Math.sqrt((internalX - keyframeX) ** 2 + (internalY - keyframeY) ** 2);
+          if (distance <= 20) {
+            isDraggingKeyframe.current = true;
+            dragStartPos.current = { x: internalX, y: internalY };
+            dragStartKeyframe.current = { ...keyframe };
+            setCursor('grabbing');
+            
+            window.addEventListener('mousemove', handleKeyframeDrag);
+            window.addEventListener('mouseup', handleKeyframeDragEnd);
+            return;
+          }
+        }
+      }
+    }
+    
+    // 기존 패닝 로직
     isPanning.current = true;
     lastPos.current = { x: e.clientX, y: e.clientY };
     window.addEventListener('mousemove', handleMouseMove);
@@ -71,7 +264,51 @@ function CanvasPreview({
   }
   
   function handleMouseMove(e) {
-    if (!isPanning.current) return;
+    if (!isPanning.current) {
+      // 키프레임 핸들 위에 있는지 확인
+      if (selectedKeyframe && selectedKeyframe.layerIndex !== null && selectedKeyframe.keyframeIndex !== null) {
+        const selectedLayer = layers[selectedKeyframe.layerIndex];
+        if (selectedLayer && selectedLayer.animation && selectedLayer.animation[selectedKeyframe.keyframeIndex]) {
+          const keyframe = selectedLayer.animation[selectedKeyframe.keyframeIndex];
+          const absoluteTime = selectedLayer.start + keyframe.time;
+          
+          if (Math.abs(currentTime - absoluteTime) < 0.1) {
+            const rect = canvasRef.current.getBoundingClientRect();
+            const displayX = e.clientX - rect.left;
+            const displayY = e.clientY - rect.top;
+            
+            const scaleX = width / displaySize.width;
+            const scaleY = height / displaySize.height;
+            const internalX = displayX * scaleX;
+            const internalY = displayY * scaleY;
+            
+            let keyframeX = keyframe.x ?? selectedLayer.x ?? 0;
+            let keyframeY = keyframe.y ?? selectedLayer.y ?? 0;
+            
+            if (selectedLayer.align === "center") {
+              keyframeX = width / 2;
+            } else if (selectedLayer.align === "right") {
+              keyframeX = width - (selectedLayer.marginRight || 0);
+            }
+            
+            if (selectedLayer.verticalAlign === "middle") {
+              keyframeY = height / 2;
+            } else if (selectedLayer.verticalAlign === "bottom") {
+              keyframeY = height - (selectedLayer.marginBottom || 0);
+            }
+            
+            const distance = Math.sqrt((internalX - keyframeX) ** 2 + (internalY - keyframeY) ** 2);
+            if (distance <= 20) {
+              setCursor('grab');
+              return;
+            }
+          }
+        }
+      }
+      setCursor('default');
+      return;
+    }
+    
     const dx = (e.clientX - lastPos.current.x) / zoom;
     const dy = (e.clientY - lastPos.current.y) / zoom;
     viewportOffset.current.x += dx;
@@ -83,6 +320,83 @@ function CanvasPreview({
     isPanning.current = false;
     window.removeEventListener('mousemove', handleMouseMove);
     window.removeEventListener('mouseup', handleMouseUp);
+  }
+
+  // 키프레임 드래그 중 핸들러
+  function handleKeyframeDrag(e) {
+    if (!isDraggingKeyframe.current || !dragStartKeyframe.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const displayX = e.clientX - rect.left;
+    const displayY = e.clientY - rect.top;
+    
+    // 표시 좌표를 내부 좌표로 변환
+    const scaleX = width / displaySize.width;
+    const scaleY = height / displaySize.height;
+    const internalX = displayX * scaleX;
+    const internalY = displayY * scaleY;
+    
+    if (dragMode === 'move') {
+      // 이동
+      const deltaX = internalX - dragStartPos.current.x;
+      const deltaY = internalY - dragStartPos.current.y;
+      const newX = (dragStartKeyframe.current.x ?? 0) + deltaX;
+      const newY = (dragStartKeyframe.current.y ?? 0) + deltaY;
+      if (onKeyframeUpdate && selectedKeyframe) {
+        const updatedKeyframe = {
+          ...dragStartKeyframe.current,
+          x: newX,
+          y: newY
+        };
+        onKeyframeUpdate(selectedKeyframe.layerIndex, selectedKeyframe.keyframeIndex, updatedKeyframe);
+      }
+    } else if (dragMode === 'resize') {
+      // 크기조절
+      const { drawX, drawY, w: bw, h: bh } = getTextDrawAndBox(selectedLayer, dragStartKeyframe.current, canvasRef.current.getContext("2d"), width, height);
+      let refX = drawX, refY = drawY, refW = bw, refH = bh;
+      let newW = bw, newH = bh;
+      let scale = dragStartKeyframe.current.scale ?? selectedLayer.scale ?? 1;
+      // 각 핸들별로 기준점/방향 다름
+      if (dragHandleIndex.current === 0) { // 좌상
+        newW = (refX + refW) - internalX;
+        newH = (refY + refH) - internalY;
+      } else if (dragHandleIndex.current === 1) { // 우상
+        newW = internalX - refX;
+        newH = (refY + refH) - internalY;
+      } else if (dragHandleIndex.current === 2) { // 좌하
+        newW = (refX + refW) - internalX;
+        newH = internalY - refY;
+      } else if (dragHandleIndex.current === 3) { // 우하
+        newW = internalX - refX;
+        newH = internalY - refY;
+      }
+      // 최소 크기 제한
+      newW = Math.max(10, newW);
+      newH = Math.max(10, newH);
+      // scale 계산 (기존 크기 대비 비율)
+      const baseFontSize = selectedLayer.fontSize || 30;
+      const baseW = (selectedLayer.text?.length || 1) * baseFontSize * 0.6;
+      const baseH = baseFontSize * 1.2;
+      const newScale = Math.min(newW / baseW, newH / baseH);
+      if (onKeyframeUpdate && selectedKeyframe) {
+        const updatedKeyframe = {
+          ...dragStartKeyframe.current,
+          scale: newScale
+        };
+        onKeyframeUpdate(selectedKeyframe.layerIndex, selectedKeyframe.keyframeIndex, updatedKeyframe);
+      }
+    }
+  }
+
+  // 키프레임 드래그 종료 핸들러
+  function handleKeyframeDragEnd() {
+    isDraggingKeyframe.current = false;
+    dragStartKeyframe.current = null;
+    setDragMode(null);
+    dragHandleIndex.current = null;
+    setCursor('default');
+    window.removeEventListener('mousemove', handleKeyframeDrag);
+    window.removeEventListener('mouseup', handleKeyframeDragEnd);
   }
 
   // 이미지 레이어 src/quality 변경 시 썸네일 준비
@@ -470,11 +784,40 @@ function CanvasPreview({
         ctx.drawImage(video, drawX, drawY, videoW, videoH);
         ctx.restore();
       } else if (layer.type === "text") {
-        const fontSize = layer.fontSize || 30;
-        const fontFamily = layer.fontFamily || "Arial";
-        ctx.font = `${fontSize}px ${fontFamily}`;
+        const { x, y, scale } = getCurrentKeyframeValue(layer, currentTime);
+        const { drawX, drawY, w, h, boxX, boxY, textAlign, textBaseline } = getTextDrawAndBox(layer, { x, y, scale }, ctx, width, height);
+        ctx.save();
+        ctx.globalAlpha = layer.opacity ?? 1;
+        ctx.font = `${layer.fontSize ? layer.fontSize * scale : 32 * scale}px ${layer.fontFamily || "sans-serif"}`;
         ctx.fillStyle = layer.color || "#fff";
-        ctx.fillText(layer.text, layer.x, layer.y);
+        ctx.textAlign = textAlign;
+        ctx.textBaseline = textBaseline;
+        ctx.fillText(layer.text || "", drawX, drawY);
+        // 바운딩 박스/핸들
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(boxX, boxY, w, h);
+        ctx.setLineDash([]);
+        const handleSize = 12;
+        const handles = [
+          { x: boxX, y: boxY },
+          { x: boxX + w, y: boxY },
+          { x: boxX, y: boxY + h },
+          { x: boxX + w, y: boxY + h }
+        ];
+        handles.forEach(handle => {
+          ctx.save();
+          ctx.beginPath();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#fff';
+          ctx.fillStyle = 'rgba(255,0,0,0.8)';
+          ctx.rect(handle.x - handleSize/2, handle.y - handleSize/2, handleSize, handleSize);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        });
+        ctx.restore();
       } else if (layer.type === "effect") {
         const effectFunc = EFFECT_MAP[layer.effectType];
         if (effectFunc) {
@@ -492,85 +835,39 @@ function CanvasPreview({
       )
         return;
 
-      let x = layer.x ?? 0;
-      let y = layer.y ?? 0;
-      let scale = layer.scale ?? 1;
-      let animOpacity = 1;
-
-      // 키프레임 애니메이션 처리
-      if (Array.isArray(layer.animation) && layer.animation.length > 1) {
-        const relTime = currentTime - layer.start;
-        let prev = layer.animation[0];
-        let next = layer.animation[layer.animation.length - 1];
-
-        if (relTime <= prev.time) {
-          x = prev.x ?? x;
-          y = prev.y ?? y;
-          scale = prev.scale ?? scale;
-          animOpacity = prev.opacity ?? layer.opacity ?? 1;
-        } else if (relTime >= next.time) {
-          x = next.x ?? x;
-          y = next.y ?? y;
-          scale = next.scale ?? scale;
-          animOpacity = next.opacity ?? layer.opacity ?? 1;
-        } else {
-          for (let i = 1; i < layer.animation.length; i++) {
-            if (layer.animation[i].time > relTime) {
-              next = layer.animation[i];
-              prev = layer.animation[i - 1];
-              break;
-            }
-          }
-          const t = (relTime - prev.time) / (next.time - prev.time);
-          
-          // Easing 적용
-          const easedT = applyEasing(t, prev.easing || 'linear');
-          
-          x = (prev.x ?? x) + ((next.x ?? x) - (prev.x ?? x)) * easedT;
-          y = (prev.y ?? y) + ((next.y ?? y) - (prev.y ?? y)) * easedT;
-          scale = (prev.scale ?? scale) + ((next.scale ?? scale) - (prev.scale ?? scale)) * easedT;
-          const prevOpacity = prev.opacity ?? layer.opacity ?? 1;
-          const nextOpacity = next.opacity ?? layer.opacity ?? 1;
-          animOpacity = prevOpacity + (nextOpacity - prevOpacity) * easedT;
-        }
-      } else {
-        animOpacity = layer.opacity ?? 1;
-      }
-
+      const { x, y, scale } = getCurrentKeyframeValue(layer, currentTime);
+      const { drawX, drawY, w, h, boxX, boxY, textAlign, textBaseline } = getTextDrawAndBox(layer, { x, y, scale }, ctx, width, height);
       ctx.save();
-      ctx.globalAlpha = animOpacity;
-      ctx.font = `${layer.fontSize ? layer.fontSize * scale : 32 * scale}px ${
-        layer.fontFamily || "sans-serif"
-      }`;
+      ctx.globalAlpha = layer.opacity ?? 1;
+      ctx.font = `${layer.fontSize ? layer.fontSize * scale : 32 * scale}px ${layer.fontFamily || "sans-serif"}`;
       ctx.fillStyle = layer.color || "#fff";
-
-      // 가로 정렬
-      let drawX = x;
-      if (layer.align === "center") {
-        ctx.textAlign = "center";
-        drawX = width / 2;
-      } else if (layer.align === "right") {
-        ctx.textAlign = "right";
-        drawX = width - (layer.marginRight || 0);
-      } else {
-        ctx.textAlign = "left";
-        drawX = x;
-      }
-
-      // 세로 정렬
-      let drawY = y;
-      if (layer.verticalAlign === "middle") {
-        ctx.textBaseline = "middle";
-        drawY = height / 2;
-      } else if (layer.verticalAlign === "bottom") {
-        ctx.textBaseline = "bottom";
-        drawY = height - (layer.marginBottom || 0);
-      } else {
-        ctx.textBaseline = "top";
-        drawY = y;
-      }
-
+      ctx.textAlign = textAlign;
+      ctx.textBaseline = textBaseline;
       ctx.fillText(layer.text || "", drawX, drawY);
+      // 바운딩 박스/핸들
+      ctx.strokeStyle = '#ff0000';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(boxX, boxY, w, h);
+      ctx.setLineDash([]);
+      const handleSize = 12;
+      const handles = [
+        { x: boxX, y: boxY },
+        { x: boxX + w, y: boxY },
+        { x: boxX, y: boxY + h },
+        { x: boxX + w, y: boxY + h }
+      ];
+      handles.forEach(handle => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#fff';
+        ctx.fillStyle = 'rgba(255,0,0,0.8)';
+        ctx.rect(handle.x - handleSize/2, handle.y - handleSize/2, handleSize, handleSize);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      });
       ctx.restore();
     });
 
@@ -578,7 +875,7 @@ function CanvasPreview({
     drawGuides(ctx);
     
     ctx.restore();
-  }, [layers, currentTime, width, height, selectedLayerIndex, displaySize, thumbImages, zoom, viewportOffset]);
+  }, [layers, currentTime, width, height, selectedLayerIndex, displaySize, thumbImages, zoom, selectedKeyframe]);
 
   // 클릭 시 실제 layers의 인덱스를 넘김 (좌표 변환 필요)
   const handleCanvasClick = (e) => {
@@ -602,222 +899,13 @@ function CanvasPreview({
     onSelectLayer && onSelectLayer(null);
   };
 
-  // 내부좌표(캔버스) → 화면좌표(CSS) 변환 함수 추가
-  function toScreen(x, y) {
-    // x, y: 캔버스 내부 좌표계 (width, height 기준)
-    // 반환: 화면상 좌표 (displaySize, zoom 기준)
-    const scaleX = displaySize.width / width;
-    const scaleY = displaySize.height / height;
-    return {
-      x: (x - viewportOffset.current.x) * scaleX * zoom,
-      y: (y - viewportOffset.current.y) * scaleY * zoom,
-    };
-  }
-
-  // 핸들 오버레이 렌더링
-  function renderHandles() {
-    if (selectedLayerIndex == null) return null;
-    const layer = layers[selectedLayerIndex];
-    if (!layer) return null;
-    if (!(layer.type === 'image' || layer.type === 'text')) return null;
-    // 현재 시간에 정확히 일치하는 키프레임이 있는지 확인
-    const relTime = currentTime - layer.start;
-    const kfIdx = Array.isArray(layer.animation)
-      ? layer.animation.findIndex(kf => Math.abs(kf.time - relTime) < 0.05)
-      : -1;
-    if (kfIdx === -1) return null;
-    // 위치/스케일 계산 (이미지 중심점 기준)
-    let x = layer.x ?? 0, y = layer.y ?? 0, scale = layer.scale ?? 1;
-    if (layer.animation && layer.animation[kfIdx]) {
-      x = layer.animation[kfIdx].x ?? x;
-      y = layer.animation[kfIdx].y ?? y;
-      scale = layer.animation[kfIdx].scale ?? scale;
-    }
-    // === draw와 동일한 실제 렌더링 크기 계산 ===
-    let boxW = 100, boxH = 100, cx = x, cy = y, boxX = x, boxY = y;
-    if (layer.type === 'image') {
-      const img = getImage(layer.src);
-      if (img && img.naturalWidth && img.naturalHeight) {
-        // draw와 동일한 anchor/offset/scale/crop 계산
-        let anchorX = x;
-        let anchorY = y;
-        if (anchorX === 0 && layer.align === "center") anchorX = width / 2;
-        else if (anchorX === 0 && layer.align === "right") anchorX = width;
-        if (anchorY === 0 && layer.verticalAlign === "middle") anchorY = height / 2;
-        else if (anchorY === 0 && layer.verticalAlign === "bottom") anchorY = height;
-        let animOffsetX = 0, animOffsetY = 0, animScale = 1;
-        if (Array.isArray(layer.animation) && layer.animation.length > 1) {
-          const relTime = currentTime - layer.start;
-          let prev = layer.animation[0];
-          let next = layer.animation[layer.animation.length - 1];
-          for (let i = 1; i < layer.animation.length; i++) {
-            if (layer.animation[i].time > relTime) {
-              next = layer.animation[i];
-              prev = layer.animation[i - 1];
-              break;
-            }
-          }
-          const t = (relTime - prev.time) / (next.time - prev.time);
-          animOffsetX = (prev.x ?? 0) + ((next.x ?? 0) - (prev.x ?? 0)) * t;
-          animOffsetY = (prev.y ?? 0) + ((next.y ?? 0) - (prev.y ?? 0)) * t;
-          animScale = (prev.scale ?? 1) + ((next.scale ?? 1) - (prev.scale ?? 1)) * t;
-        }
-        const finalX = anchorX + animOffsetX;
-        const finalY = anchorY + animOffsetY;
-        let renderScale = (layer.scale ?? 1) * animScale;
-        const cropOptions = {
-          scaleMode: layer.scaleMode || 'fit',
-          cropMode: layer.cropMode || 'center',
-          targetSize: layer.targetSize || null,
-          cropOffset: layer.cropOffset || { x: 0, y: 0 },
-          cropZoom: layer.cropZoom || 1.0,
-        };
-        const targetWidth = cropOptions.targetSize?.width || img.naturalWidth;
-        const targetHeight = cropOptions.targetSize?.height || img.naturalHeight;
-        const cropData = calculateCrop(img, {
-          ...cropOptions,
-          targetWidth,
-          targetHeight,
-        });
-        boxW = targetWidth * renderScale;
-        boxH = targetHeight * renderScale;
-        cx = finalX;
-        cy = finalY;
-        boxX = finalX - (targetWidth / 2) * renderScale;
-        boxY = finalY - (targetHeight / 2) * renderScale;
-      }
-    } else if (layer.type === 'text') {
-      // 텍스트 실제 크기 계산 (대략적)
-      const fontSize = layer.fontSize || 30;
-      const fontFamily = layer.fontFamily || 'Arial';
-      const ctx = document.createElement('canvas').getContext('2d');
-      ctx.font = `${fontSize}px ${fontFamily}`;
-      const text = layer.text || '';
-      boxW = ctx.measureText(text).width;
-      boxH = fontSize * 1.2;
-      cx = x;
-      cy = y;
-      if (layer.align === 'center') cx = width / 2 + (x - width / 2);
-      else if (layer.align === 'right') cx = width + (x - width);
-      if (layer.verticalAlign === 'middle') cy = height / 2 + (y - height / 2);
-      else if (layer.verticalAlign === 'bottom') cy = height + (y - height);
-      boxX = cx - boxW / 2;
-      boxY = cy - boxH / 2;
-    }
-    // 디스플레이 좌표 변환 (함수 사용)
-    const topLeft = toScreen(boxX, boxY);
-    const bottomRight = toScreen(boxX + boxW, boxY + boxH);
-    const center = toScreen(cx, cy);
-    const dispW = bottomRight.x - topLeft.x;
-    const dispH = bottomRight.y - topLeft.y;
-    // 핸들(네 귀퉁이) 좌표
-    const handles = [
-      { x: topLeft.x, y: topLeft.y, cursor: 'nwse-resize', dir: 'topleft' },
-      { x: bottomRight.x, y: topLeft.y, cursor: 'nesw-resize', dir: 'topright' },
-      { x: bottomRight.x, y: bottomRight.y, cursor: 'nwse-resize', dir: 'bottomright' },
-      { x: topLeft.x, y: bottomRight.y, cursor: 'nesw-resize', dir: 'bottomleft' },
-    ];
-    return (
-      <svg
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: displaySize.width * zoom,
-          height: displaySize.height * zoom,
-          pointerEvents: 'none',
-          zIndex: 20,
-        }}
-      >
-        {/* 사각형 테두리 */}
-        <rect
-          x={topLeft.x}
-          y={topLeft.y}
-          width={dispW}
-          height={dispH}
-          fill="none"
-          stroke="#00bfff"
-          strokeWidth={2}
-        />
-        {/* 이동 핸들(중앙) */}
-        <circle
-          cx={center.x}
-          cy={center.y}
-          r={8}
-          fill="#fff"
-          stroke="#00bfff"
-          strokeWidth={2}
-          style={{ cursor: 'move', pointerEvents: 'all' }}
-          onMouseDown={e => handleMoveHandleMouseDown(e, center.x, center.y, kfIdx)}
-        />
-        {/* 크기 핸들(네 귀퉁이) */}
-        {handles.map((h, i) => (
-          <circle
-            key={h.dir}
-            cx={h.x}
-            cy={h.y}
-            r={8}
-            fill="#fff"
-            stroke="#00bfff"
-            strokeWidth={2}
-            style={{ cursor: h.cursor, pointerEvents: 'all' }}
-            onMouseDown={e => handleResizeHandleMouseDown(e, center.x, center.y, Math.max(dispW, dispH), h.dir, kfIdx)}
-          />
-        ))}
-      </svg>
-    );
-  }
-
-  // 핸들 드래그 이벤트 구현 (민감도 낮춤)
-  function handleMoveHandleMouseDown(e, cx, cy, kfIdx) {
-    e.preventDefault();
-    e.stopPropagation();
-    const startX = e.clientX, startY = e.clientY;
-    function onMove(moveEvent) {
-      const dx = (moveEvent.clientX - startX) / 4 / zoom;
-      const dy = (moveEvent.clientY - startY) / 4 / zoom;
-      onMoveKeyframe && onMoveKeyframe(dx, dy, kfIdx);
-    }
-    function onUp() {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    }
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }
-  function handleResizeHandleMouseDown(e, cx, cy, size, dir, kfIdx) {
-    e.preventDefault();
-    e.stopPropagation();
-    const startX = e.clientX, startY = e.clientY;
-    function onMove(moveEvent) {
-      const dx = (moveEvent.clientX - startX) / zoom;
-      const dy = (moveEvent.clientY - startY) / zoom;
-      onResizeKeyframe && onResizeKeyframe(dx / size, dy / size, dir, kfIdx);
-    }
-    function onUp() {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    }
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }
-
-  return (
-    <div style={{ position: 'relative', width: displaySize.width * zoom, height: displaySize.height * zoom }}>
-      <canvas 
-        ref={canvasRef} 
-        onClick={handleCanvasClick}
-        onMouseDown={handleMouseDown}
-        style={{ 
-          display: 'block', 
-          width: displaySize.width * zoom, 
-          height: displaySize.height * zoom,
-          cursor: isPanning.current ? 'grabbing' : 'grab'
-        }} 
-      />
-      {renderHandles()}
-    </div>
-  );
+  return <canvas 
+    ref={canvasRef} 
+    onClick={handleCanvasClick}
+    onMouseDown={handleMouseDown}
+    onMouseMove={handleMouseMove}
+    style={{ cursor: isDraggingKeyframe.current ? 'grabbing' : cursor }}
+  />;
 }
 
 export default CanvasPreview;

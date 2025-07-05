@@ -1,0 +1,31 @@
+[
+  {
+    "type": "text",
+    "text": "새 템플릿",
+    "x": 200,
+    "y": 100,
+    "start": 0,
+    "duration": 67.86,
+    "align": "center",
+    "verticalAlign": "middle",
+    "color": "#fff",
+    "fontSize": 48,
+    "fontFamily": "Arial",
+    "animation": [
+      {
+        "time": 0,
+        "x": 200,
+        "y": 100,
+        "scale": 1,
+        "opacity": 1
+      },
+      {
+        "time": 37.890532486754864,
+        "x": 200,
+        "y": 100,
+        "scale": 1,
+        "opacity": 1
+      }
+    ]
+  }
+]
